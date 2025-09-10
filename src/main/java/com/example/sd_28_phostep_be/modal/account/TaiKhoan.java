@@ -1,5 +1,6 @@
 package com.example.sd_28_phostep_be.modal.account;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Nationalized;
@@ -18,8 +19,9 @@ public class TaiKhoan {
     @Column(name = "id", nullable = false)
     private Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER) // đổi từ LAZY -> EAGER để load luôn
     @JoinColumn(name = "id_quyen_han", referencedColumnName = "id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"}) // tránh lỗi proxy
     private QuyenHan idQuyenHan;
 
     @Nationalized
