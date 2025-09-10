@@ -1,5 +1,6 @@
 package com.example.sd_28_phostep_be.modal.account;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Nationalized;
@@ -20,9 +21,10 @@ public class KhachHang {
     @Column(name = "id", nullable = false)
     private Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_tai_khoan", referencedColumnName = "id")
-    private TaiKhoan idTaiKhoan;
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    private TaiKhoan taiKhoan;
 
     @Nationalized
     @Column(name = "ma")
