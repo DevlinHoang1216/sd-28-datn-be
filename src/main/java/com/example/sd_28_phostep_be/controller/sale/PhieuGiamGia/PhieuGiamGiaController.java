@@ -1,4 +1,4 @@
-package com.example.sd_28_phostep_be.controller.sell.PhieuGiamGia;
+package com.example.sd_28_phostep_be.controller.sale.PhieuGiamGia;
 
 
 import com.example.sd_28_phostep_be.dto.sale.request.PhieuGiamGia.PhieuGiamGiaDTO;
