@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Nationalized;
 
+import java.time.Instant;
 import java.time.OffsetDateTime;
 
 @Getter
@@ -38,9 +39,9 @@ public class LichSuHoaDon {
     private String hanhDong;
 
     @Column(name = "thoi_gian")
-    private OffsetDateTime thoiGian;
+    private Instant thoiGian;
 
     @Column(name = "deleted")
-    private Boolean deleted;
+    private Short deleted;
 
 }
