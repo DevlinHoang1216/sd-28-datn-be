@@ -37,4 +37,7 @@ public class ThuongHieu {
     @Column(name = "ngay_cap_nhat")
     private Instant ngayCapNhat;
 
+    @Column(name = "deleted")
+    private Boolean deleted;
+
 }
