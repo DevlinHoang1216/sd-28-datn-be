@@ -29,4 +29,28 @@ public class PhieuGiamGiaController {
     public ResponseEntity<PhieuGiamGia> add(@RequestBody PhieuGiamGiaDTO pgg) {
         return ResponseEntity.ok(phieuGiamGiaService.add(pgg));
     }
+
+    // Lấy phiếu giảm giá theo ID
+    @GetMapping("/{id}")
+    public ResponseEntity<PhieuGiamGia> getById(@PathVariable Long id) {
+        try {
+            PhieuGiamGia pgg = phieuGiamGiaService.getById(id);
+            return ResponseEntity.ok(pgg);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    // Cập nhật phiếu giảm giá
+    @PutMapping("/{id}")
+    public ResponseEntity<PhieuGiamGia> update(@PathVariable Long id, @RequestBody PhieuGiamGiaDTO dto) {
+        try {
+            PhieuGiamGia updatedPgg = phieuGiamGiaService.update(id, dto);
+            return ResponseEntity.ok(updatedPgg);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(null);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 }

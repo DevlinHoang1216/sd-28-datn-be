@@ -55,4 +55,37 @@ public class PhieuGiamGiaServices {
 
         return phieuGiamGiaRepository.save(pgg);
     }
+
+    // Method to get a single coupon by ID
+    public PhieuGiamGia getById(Long id) {
+        return phieuGiamGiaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy phiếu giảm giá với ID: " + id));
+    }
+
+    // Method to update an existing coupon
+    public PhieuGiamGia update(Long id, PhieuGiamGiaDTO dto) {
+        PhieuGiamGia existingPgg = getById(id);
+        Instant now = Instant.now();
+
+        // Check ngày bắt đầu
+        if (dto.getNgayBatDau() != null && dto.getNgayBatDau().isBefore(now)) {
+            throw new IllegalArgumentException("Ngày bắt đầu không được nhỏ hơn ngày hiện tại");
+        }
+
+        // Update fields
+        existingPgg.setMa(dto.getMa());
+        existingPgg.setTenPhieuGiamGia(dto.getTenPhieuGiamGia());
+        existingPgg.setLoaiPhieuGiamGia(dto.getLoaiPhieuGiamGia());
+        existingPgg.setPhanTramGiamGia(dto.getPhanTramGiamGia());
+        existingPgg.setSoTienGiamToiDa(dto.getSoTienGiamToiDa());
+        existingPgg.setHoaDonToiThieu(dto.getHoaDonToiThieu());
+        existingPgg.setSoLuongDung(dto.getSoLuongDung());
+        existingPgg.setNgayBatDau(dto.getNgayBatDau());
+        existingPgg.setNgayKetThuc(dto.getNgayKetThuc());
+        existingPgg.setRiengTu(dto.getRiengTu());
+        existingPgg.setMoTa(dto.getMoTa());
+        existingPgg.setTrangThai(dto.getNgayKetThuc() != null && dto.getNgayKetThuc().isBefore(now) ? false : true);
+
+        return phieuGiamGiaRepository.save(existingPgg);
+    }
 }
