@@ -1,42 +1,54 @@
 package com.example.sd_28_phostep_be.service.sale.impl.PhieuGiamGia;
 
 import com.example.sd_28_phostep_be.dto.sale.request.PhieuGiamGia.PhieuGiamGiaDTO;
+import com.example.sd_28_phostep_be.modal.account.KhachHang;
 import com.example.sd_28_phostep_be.modal.sale.PhieuGiamGia;
+import com.example.sd_28_phostep_be.modal.sale.PhieuGiamGiaCaNhan;
+import com.example.sd_28_phostep_be.repository.account.KhachHang.KhachHangRepository;
+import com.example.sd_28_phostep_be.repository.sale.PhieuGiamGia.PhieuGiamGiaCaNhanRepository;
 import com.example.sd_28_phostep_be.repository.sale.PhieuGiamGia.PhieuGiamGiaRepository;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
+
 @Service
 public class PhieuGiamGiaServices {
     private final PhieuGiamGiaRepository phieuGiamGiaRepository;
+    private final KhachHangRepository khachHangRepository;
+    private final PhieuGiamGiaCaNhanRepository phieuGiamGiaCaNhanRepository;
 
-    public PhieuGiamGiaServices(PhieuGiamGiaRepository phieuGiamGiaRepository) {
+    public PhieuGiamGiaServices(PhieuGiamGiaRepository phieuGiamGiaRepository, KhachHangRepository khachHangRepository, PhieuGiamGiaCaNhanRepository phieuGiamGiaCaNhanRepository) {
         this.phieuGiamGiaRepository = phieuGiamGiaRepository;
+        this.khachHangRepository = khachHangRepository;
+        this.phieuGiamGiaCaNhanRepository = phieuGiamGiaCaNhanRepository;
     }
 
     public List<PhieuGiamGia> getall() {
         Instant now = Instant.now();
-        List<PhieuGiamGia> list = phieuGiamGiaRepository.findAll();
+        List<PhieuGiamGia> list = phieuGiamGiaRepository.findAll(Sort.by(Sort.Direction.DESC, "id"));
         list.forEach(pgg -> {
             if (pgg.getNgayKetThuc() != null && pgg.getNgayKetThuc().isBefore(now)) {
                 if (Boolean.TRUE.equals(pgg.getTrangThai())) {
                     pgg.setTrangThai(false);
-                    phieuGiamGiaRepository.save(pgg); // update lại trạng thái
+                    phieuGiamGiaRepository.save(pgg);
                 }
             }
         });
         return list;
     }
 
+
     public PhieuGiamGia add(PhieuGiamGiaDTO dto) {
         Instant now = Instant.now();
 
-        // Check ngày bắt đầu
+        // validate ngày
         if (dto.getNgayBatDau() != null && dto.getNgayBatDau().isBefore(now)) {
             throw new IllegalArgumentException("Ngày bắt đầu không được nhỏ hơn ngày hiện tại");
         }
 
+        // 1️⃣ Tạo phiếu giảm giá chung
         PhieuGiamGia pgg = PhieuGiamGia.builder()
                 .ma(dto.getMa())
                 .tenPhieuGiamGia(dto.getTenPhieuGiamGia())
@@ -50,10 +62,32 @@ public class PhieuGiamGiaServices {
                 .riengTu(dto.getRiengTu())
                 .moTa(dto.getMoTa())
                 .deleted(false)
-                .trangThai(dto.getNgayKetThuc() != null && dto.getNgayKetThuc().isBefore(now) ? false : true)
+                .trangThai(true)
                 .build();
 
-        return phieuGiamGiaRepository.save(pgg);
+        PhieuGiamGia saved = phieuGiamGiaRepository.save(pgg);
+
+        // 2️⃣ Nếu có danh sách khách hàng → tạo phiếu cá nhân
+        if (dto.getKhachHangIds() != null && !dto.getKhachHangIds().isEmpty()) {
+            for (Integer khId : dto.getKhachHangIds()) {
+                KhachHang khachHang = khachHangRepository.findById(khId)
+                        .orElseThrow(() -> new RuntimeException("Không tìm thấy khách hàng id = " + khId));
+
+                PhieuGiamGiaCaNhan caNhan = PhieuGiamGiaCaNhan.builder()
+                        .idPhieuGiamGia(saved)
+                        .idKhachHang(khachHang)
+                        .ma(saved.getMa() + "-" + khachHang.getMa()) // tạo mã riêng VD: PGG01-KH001
+                        .ngayNhan(now)
+                        .ngayHetHan(saved.getNgayKetThuc())
+                        .trangThai(true)
+                        .deleted(false)
+                        .build();
+
+                phieuGiamGiaCaNhanRepository.save(caNhan);
+            }
+        }
+
+        return saved;
     }
 
     // Method to get a single coupon by ID
