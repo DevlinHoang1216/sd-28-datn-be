@@ -1,5 +1,6 @@
 package com.example.sd_28_phostep_be.modal.product;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
@@ -22,10 +23,12 @@ public class SanPham {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_danh_muc", referencedColumnName = "id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private DanhMuc idDanhMuc;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_thuong_hieu", referencedColumnName = "id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private ThuongHieu idThuongHieu;
 
     @Nationalized
