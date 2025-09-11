@@ -14,7 +14,6 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@ToString
 @Table(name = "hoa_don_chi_tiet")
 public class HoaDonChiTiet {
     @Id

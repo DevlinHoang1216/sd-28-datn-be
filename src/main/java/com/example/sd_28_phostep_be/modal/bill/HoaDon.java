@@ -3,14 +3,19 @@ package com.example.sd_28_phostep_be.modal.bill;
 import com.example.sd_28_phostep_be.modal.sale.PhieuGiamGia;
 import com.example.sd_28_phostep_be.modal.account.KhachHang;
 import com.example.sd_28_phostep_be.modal.account.NhanVien;
+import com.example.sd_28_phostep_be.modal.sell.HinhThucThanhToan;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.Nationalized;
 
 import java.math.BigDecimal;
+import java.sql.Date;
 import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -80,7 +85,7 @@ public class HoaDon {
 
     @ColumnDefault("getdate()")
     @Column(name = "ngay_tao", nullable = false)
-    private Instant ngayTao;
+    private Date ngayTao;
 
     @Column(name = "ngay_thanh_toan")
     private OffsetDateTime ngayThanhToan;
@@ -90,7 +95,7 @@ public class HoaDon {
     private Short trangThai;
 
     @Column(name = "deleted", nullable = false)
-    private Boolean deleted = false;
+    private Boolean deleted;
 
     @ColumnDefault("getdate()")
     @Column(name = "created_at", nullable = false)
@@ -104,6 +109,15 @@ public class HoaDon {
 
     @Column(name = "updated_by")
     private Integer updatedBy;
+
+    @OneToMany(mappedBy = "idHoaDon")
+    private List<LichSuHoaDon> lichSuHoaDon;
+
+    @OneToMany(mappedBy = "idHoaDon", fetch = FetchType.LAZY)
+    private Set<HoaDonChiTiet> chiTietHoaDon = new HashSet<>();
+
+    @OneToMany(mappedBy = "idHoaDon", fetch = FetchType.LAZY)
+    private Set<HinhThucThanhToan> hinhThucThanhToan = new HashSet<>();
 
     @Column(name = "giao_ca_id")
     private Integer giaoCaId;
