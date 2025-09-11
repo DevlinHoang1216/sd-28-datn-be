@@ -26,8 +26,13 @@ public class PhieuGiamGiaController {
        return phieuGiamGiaService.getall();
    }
     @PostMapping("/add")
-    public ResponseEntity<PhieuGiamGia> add(@RequestBody PhieuGiamGiaDTO pgg) {
-        return ResponseEntity.ok(phieuGiamGiaService.add(pgg));
+    public ResponseEntity<?> add(@RequestBody PhieuGiamGiaDTO dto) {
+        try {
+            PhieuGiamGia saved = phieuGiamGiaService.add(dto);
+            return ResponseEntity.ok(saved); // ✅ trả về phiếu giảm giá vừa tạo
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage()); // ❌ lỗi custom
+        }
     }
 
     // Lấy phiếu giảm giá theo ID

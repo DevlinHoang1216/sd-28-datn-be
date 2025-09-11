@@ -1,6 +1,7 @@
 package com.example.sd_28_phostep_be.dto.sale.request.PhieuGiamGia;
 
 import java.time.Instant;
+import java.util.List;
 
 public class PhieuGiamGiaDTO {
     private String ma;
@@ -14,6 +15,7 @@ public class PhieuGiamGiaDTO {
     private Instant ngayKetThuc;
     private Boolean riengTu;
     private String moTa;
+    private List<Integer> khachHangIds; // ✅ thêm danh sách ID khách hàng
 
     public PhieuGiamGiaDTO() {
     }
@@ -104,5 +106,13 @@ public class PhieuGiamGiaDTO {
 
     public void setMoTa(String moTa) {
         this.moTa = moTa;
+    }
+
+    public List<Integer> getKhachHangIds() {
+        return khachHangIds;
+    }
+
+    public void setKhachHangIds(List<Integer> khachHangIds) {
+        this.khachHangIds = khachHangIds;
     }
 }
