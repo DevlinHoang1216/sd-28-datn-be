@@ -1,11 +1,14 @@
 package com.example.sd_28_phostep_be.modal.product;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.Nationalized;
 
 import java.time.Instant;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -18,12 +21,8 @@ import java.time.Instant;
 public class AnhSanPham {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
+    @Column(name = "id", nullable = false)
     private Integer id;
-
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "id_chi_tiet_sp", referencedColumnName = "id")
-    private ChiTietSanPham idChiTietSp;
 
     @Nationalized
     @Lob
@@ -42,7 +41,15 @@ public class AnhSanPham {
     @Column(name = "ngay_cap_nhat")
     private Instant ngayCapNhat;
 
-    @Column(name = "deleted")
-    private Boolean deleted;
+    @NotNull
+    @ColumnDefault("0")
+    @Column(name = "deleted", nullable = false)
+    private Boolean deleted = false;
+
+    @OneToMany(mappedBy = "idAnhSanPham")
+    private Set<ChiTietSanPham> chiTietSanPhams = new LinkedHashSet<>();
+
+    @OneToMany(mappedBy = "idAnhSanPham")
+    private Set<SanPham> sanPhams = new LinkedHashSet<>();
 
 }

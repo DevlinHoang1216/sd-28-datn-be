@@ -11,6 +11,8 @@ import org.mapstruct.factory.Mappers;
 @Mapper(componentModel = "spring")
 public interface HoaDonDetailMapper {
     HoaDonDetailMapper INSTANCE = Mappers.getMapper(HoaDonDetailMapper.class);
+    
+    // Updated after entity relationship changes
 
     @Mapping(source = "id", target = "hoaDonChiTietId")
     @Mapping(source = "idChiTietSp.id", target = "chiTietSanPhamId")
@@ -26,7 +28,7 @@ public interface HoaDonDetailMapper {
     @Mapping(source = "idChiTietSp.idChatLieu.tenChatLieu", target = "chatLieu")
     @Mapping(source = "idChiTietSp.soLuongTonKho", target = "soLuongTonKho")
     @Mapping(source = "idChiTietSp.moTaChiTiet", target = "moTaChiTiet")
-    @Mapping(source = "idChiTietSp.idSanPham.urlAnhDaiDien", target = "duongDan")
+    @Mapping(source = "idChiTietSp.idAnhSanPham.urlAnh", target = "duongDan")
     HoaDonDetailResponse.SanPhamChiTietInfo mapToSanPhamChiTietInfo(HoaDonChiTiet hoaDonChiTiet);
 
     @Mapping(source = "idPhuongThucThanhToan.ma", target = "maHinhThucThanhToan")

@@ -1,11 +1,15 @@
 package com.example.sd_28_phostep_be.modal.product;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.Nationalized;
+
 import java.time.Instant;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -23,18 +27,19 @@ public class SanPham {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_danh_muc", referencedColumnName = "id")
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private DanhMuc idDanhMuc;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_thuong_hieu", referencedColumnName = "id")
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private ThuongHieu idThuongHieu;
 
+    @Size(max = 255)
     @Nationalized
     @Column(name = "ma")
     private String ma;
 
+    @Size(max = 255)
+    @NotNull
     @Nationalized
     @Column(name = "ten_san_pham", nullable = false)
     private String tenSanPham;
@@ -44,11 +49,7 @@ public class SanPham {
     @Column(name = "mo_ta_san_pham")
     private String moTaSanPham;
 
-    @Nationalized
-    @Lob
-    @Column(name = "url_anh_dai_dien")
-    private String urlAnhDaiDien;
-
+    @Size(max = 100)
     @Nationalized
     @Column(name = "quoc_gia_san_xuat", length = 100)
     private String quocGiaSanXuat;
@@ -63,5 +64,12 @@ public class SanPham {
 
     @Column(name = "deleted")
     private Boolean deleted;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_anh_san_pham", referencedColumnName = "id")
+    private AnhSanPham idAnhSanPham;
+
+    @OneToMany(mappedBy = "idSanPham")
+    private Set<ChiTietSanPham> chiTietSanPhams = new LinkedHashSet<>();
 
 }
