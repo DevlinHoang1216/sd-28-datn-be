@@ -2,6 +2,7 @@ package com.example.sd_28_phostep_be.controller.sale.PhieuGiamGia;
 
 
 import com.example.sd_28_phostep_be.dto.sale.request.PhieuGiamGia.PhieuGiamGiaDTO;
+import com.example.sd_28_phostep_be.dto.sale.response.PhieuGiamGia.PhieuGiamGiaDetailResponse;
 import com.example.sd_28_phostep_be.modal.sale.PhieuGiamGia;
 import com.example.sd_28_phostep_be.service.sale.impl.PhieuGiamGia.PhieuGiamGiaServices;
 import org.springframework.http.ResponseEntity;
@@ -47,7 +48,7 @@ public class PhieuGiamGiaController {
     }
 
     // Cập nhật phiếu giảm giá
-    @PutMapping("/{id}")
+    @PutMapping("/update/{id}")
     public ResponseEntity<PhieuGiamGia> update(@PathVariable Long id, @RequestBody PhieuGiamGiaDTO dto) {
         try {
             PhieuGiamGia updatedPgg = phieuGiamGiaService.update(id, dto);
@@ -57,5 +58,20 @@ public class PhieuGiamGiaController {
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
+    }
+    @PutMapping("/delete/{id}")
+    public ResponseEntity<?> delete(@PathVariable Integer id) {
+        try {
+            PhieuGiamGia deleted = phieuGiamGiaService.delete(id);
+            return ResponseEntity.ok(deleted); // ✅ Trả về object đã xóa mềm
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage()); // ❌ Báo lỗi custom
+        }
+    }
+
+    @GetMapping("/detail/{id}")
+    public ResponseEntity<PhieuGiamGiaDetailResponse> getDetail(@PathVariable Integer id) {
+        PhieuGiamGiaDetailResponse dto = phieuGiamGiaService.getDetail(id);
+        return ResponseEntity.ok(dto);
     }
 }
