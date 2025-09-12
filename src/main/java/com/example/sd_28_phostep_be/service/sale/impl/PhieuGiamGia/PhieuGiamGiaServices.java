@@ -1,6 +1,7 @@
 package com.example.sd_28_phostep_be.service.sale.impl.PhieuGiamGia;
 
 import com.example.sd_28_phostep_be.dto.sale.request.PhieuGiamGia.PhieuGiamGiaDTO;
+import com.example.sd_28_phostep_be.dto.sale.response.PhieuGiamGia.PhieuGiamGiaDetailResponse;
 import com.example.sd_28_phostep_be.modal.account.KhachHang;
 import com.example.sd_28_phostep_be.modal.sale.PhieuGiamGia;
 import com.example.sd_28_phostep_be.modal.sale.PhieuGiamGiaCaNhan;
@@ -11,7 +12,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class PhieuGiamGiaServices {
@@ -121,5 +124,52 @@ public class PhieuGiamGiaServices {
         existingPgg.setTrangThai(dto.getNgayKetThuc() != null && dto.getNgayKetThuc().isBefore(now) ? false : true);
 
         return phieuGiamGiaRepository.save(existingPgg);
+    }
+
+    public PhieuGiamGia delete(Integer id) {
+        PhieuGiamGia existing = phieuGiamGiaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy phiếu giảm giá id = " + id));
+        existing.setTrangThai(!Boolean.TRUE.equals(existing.getTrangThai()));
+        return phieuGiamGiaRepository.save(existing);
+    }
+
+    public PhieuGiamGiaDetailResponse getDetail(Integer id) {
+        PhieuGiamGia pgg = phieuGiamGiaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy PGG"));
+
+        PhieuGiamGiaDetailResponse dto = PhieuGiamGiaDetailResponse.builder()
+                .id(pgg.getId())
+                .ma(pgg.getMa())
+                .tenPhieuGiamGia(pgg.getTenPhieuGiamGia())
+                .loaiPhieuGiamGia(pgg.getLoaiPhieuGiamGia())
+                .phanTramGiamGia(pgg.getPhanTramGiamGia())
+                .soTienGiamToiDa(pgg.getSoTienGiamToiDa())
+                .hoaDonToiThieu(pgg.getHoaDonToiThieu())
+                .soLuongDung(pgg.getSoLuongDung())
+                .ngayBatDau(pgg.getNgayBatDau())
+                .ngayKetThuc(pgg.getNgayKetThuc())
+                .trangThai(pgg.getTrangThai())
+                .riengTu(pgg.getRiengTu())
+                .moTa(pgg.getMoTa())
+                .build();
+
+        // Nếu là PGG cá nhân (riengTu = true) thì load thêm dữ liệu
+        if (Boolean.TRUE.equals(pgg.getRiengTu())) {
+            List<PhieuGiamGiaCaNhan> caNhanList =
+                    phieuGiamGiaCaNhanRepository.findAllByIdPhieuGiamGiaId(pgg.getId());
+
+            List<PhieuGiamGiaDetailResponse.CustomerDetail> customers = caNhanList.stream()
+                    .map(cn -> new PhieuGiamGiaDetailResponse.CustomerDetail(
+                            cn.getIdKhachHang().getId(),
+                            cn.getNgayNhan(),
+                            cn.getNgayHetHan()
+                    ))
+                    .collect(Collectors.toList());
+
+            dto.setCustomers(customers);
+        } else {
+            dto.setCustomers(Collections.emptyList());
+        }
+        return dto;
     }
 }
