@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.Instant;
+import org.hibernate.annotations.ColumnDefault;
 
 @Getter
 @Setter
@@ -30,6 +31,7 @@ public class DeGiay {
     @Column(name = "ngay_cap_nhat")
     private Instant ngayCapNhat;
 
+    @ColumnDefault("0")
     @Column(name = "deleted")
     private Boolean deleted;
 }

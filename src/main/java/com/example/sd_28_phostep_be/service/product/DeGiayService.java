@@ -36,59 +36,26 @@ public class DeGiayService {
 
     public DeGiay save(DeGiay deGiay) {
         if (deGiay.getId() == null) {
-            // Creating new DeGiay
-            if (deGiayRepository.existsByMaDeGiay(deGiay.getMaDeGiay())) {
-                throw new RuntimeException("Mã đế giày đã tồn tại");
-            }
             deGiay.setNgayTao(Instant.now());
-        } else {
-            // Updating existing DeGiay
-            if (deGiayRepository.existsByMaDeGiayAndIdNot(deGiay.getMaDeGiay(), deGiay.getId())) {
-                throw new RuntimeException("Mã đế giày đã tồn tại");
-            }
+            deGiay.setDeleted(false);
         }
         deGiay.setNgayCapNhat(Instant.now());
-        deGiay.setDeleted(false);
         return deGiayRepository.save(deGiay);
     }
 
     public DeGiay update(Integer id, DeGiay deGiayDetails) {
-        DeGiay deGiay = deGiayRepository.findByIdAndNotDeleted(id);
-        if (deGiay == null) {
-            throw new RuntimeException("Không tìm thấy đế giày với ID: " + id);
+        Optional<DeGiay> existingDeGiay = deGiayRepository.findById(id);
+        if (existingDeGiay.isPresent()) {
+            DeGiay deGiay = existingDeGiay.get();
+            deGiay.setTenDeGiay(deGiayDetails.getTenDeGiay());
+            deGiay.setNgayCapNhat(Instant.now());
+            return deGiayRepository.save(deGiay);
         }
-
-        // Check for duplicate code
-        if (deGiayRepository.existsByMaDeGiayAndIdNot(deGiayDetails.getMaDeGiay(), id)) {
-            throw new RuntimeException("Mã đế giày đã tồn tại");
-        }
-
-        deGiay.setTenDeGiay(deGiayDetails.getTenDeGiay());
-        deGiay.setMaDeGiay(deGiayDetails.getMaDeGiay());
-        deGiay.setNgayCapNhat(Instant.now());
-
-        return deGiayRepository.save(deGiay);
-    }
-
-    public void delete(Integer id) {
-        DeGiay deGiay = deGiayRepository.findByIdAndNotDeleted(id);
-        if (deGiay == null) {
-            throw new RuntimeException("Không tìm thấy đế giày với ID: " + id);
-        }
-        
-        // Soft delete
-        deGiay.setDeleted(true);
-        deGiay.setNgayCapNhat(Instant.now());
-        deGiayRepository.save(deGiay);
+        return null;
     }
 
     public Optional<DeGiay> findById(Integer id) {
-        DeGiay deGiay = deGiayRepository.findByIdAndNotDeleted(id);
-        return Optional.ofNullable(deGiay);
-    }
-
-    public boolean existsByMaDeGiay(String maDeGiay) {
-        return deGiayRepository.existsByMaDeGiay(maDeGiay);
+        return deGiayRepository.findById(id);
     }
 
     public DeGiay toggleStatus(Integer id) {
@@ -100,5 +67,12 @@ public class DeGiayService {
             return deGiayRepository.save(deGiay);
         }
         return null;
+    }
+
+    public boolean checkNameExists(String tenDeGiay, Integer excludeId) {
+        if (excludeId != null) {
+            return deGiayRepository.existsByTenDeGiayAndIdNot(tenDeGiay, excludeId);
+        }
+        return deGiayRepository.existsByTenDeGiay(tenDeGiay);
     }
 }

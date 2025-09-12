@@ -39,6 +39,7 @@ public class ChatLieuService {
     public ChatLieu save(ChatLieu chatLieu) {
         if (chatLieu.getId() == null) {
             chatLieu.setNgayTao(Instant.now());
+            chatLieu.setDeleted(false);
         }
         chatLieu.setNgayCapNhat(Instant.now());
         return chatLieuRepository.save(chatLieu);
@@ -49,28 +50,12 @@ public class ChatLieuService {
         if (existingChatLieu.isPresent()) {
             ChatLieu updated = existingChatLieu.get();
             updated.setTenChatLieu(chatLieu.getTenChatLieu());
-            updated.setMaChatLieu(chatLieu.getMaChatLieu());
             updated.setNgayCapNhat(Instant.now());
             return chatLieuRepository.save(updated);
         }
         return null;
     }
 
-    public boolean deleteById(Integer id) {
-        if (chatLieuRepository.existsById(id)) {
-            chatLieuRepository.deleteById(id);
-            return true;
-        }
-        return false;
-    }
-
-    public boolean existsByMaChatLieu(String maChatLieu) {
-        return chatLieuRepository.existsByMaChatLieu(maChatLieu);
-    }
-
-    public boolean existsByMaChatLieuAndIdNot(String maChatLieu, Integer id) {
-        return chatLieuRepository.existsByMaChatLieuAndIdNot(maChatLieu, id);
-    }
 
     public ChatLieu toggleStatus(Integer id) {
         Optional<ChatLieu> existingChatLieu = chatLieuRepository.findById(id);
@@ -81,5 +66,12 @@ public class ChatLieuService {
             return chatLieuRepository.save(chatLieu);
         }
         return null;
+    }
+
+    public boolean checkNameExists(String tenChatLieu, Integer excludeId) {
+        if (excludeId != null) {
+            return chatLieuRepository.existsByTenChatLieuAndIdNot(tenChatLieu, excludeId);
+        }
+        return chatLieuRepository.existsByTenChatLieu(tenChatLieu);
     }
 }

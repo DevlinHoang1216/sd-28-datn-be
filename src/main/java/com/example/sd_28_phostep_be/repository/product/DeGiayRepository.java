@@ -13,6 +13,8 @@ public interface DeGiayRepository extends JpaRepository<DeGiay, Integer> {
     
     @Query("SELECT dg FROM DeGiay dg WHERE " +
            "(:keyword IS NULL OR :keyword = '' OR " +
+           "LOWER(REPLACE(dg.tenDeGiay, ' ', '')) LIKE LOWER(REPLACE(CONCAT('%', :keyword, '%'), ' ', '')) OR " +
+           "LOWER(REPLACE(dg.maDeGiay, ' ', '')) LIKE LOWER(REPLACE(CONCAT('%', :keyword, '%'), ' ', '')) OR " +
            "LOWER(dg.tenDeGiay) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "LOWER(dg.maDeGiay) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Page<DeGiay> findAllWithKeyword(@Param("keyword") String keyword, Pageable pageable);
@@ -23,6 +25,10 @@ public interface DeGiayRepository extends JpaRepository<DeGiay, Integer> {
     boolean existsByMaDeGiay(String maDeGiay);
 
     boolean existsByMaDeGiayAndIdNot(String maDeGiay, Integer id);
+    
+    boolean existsByTenDeGiay(String tenDeGiay);
+    
+    boolean existsByTenDeGiayAndIdNot(String tenDeGiay, Integer id);
 
     @Query("SELECT dg FROM DeGiay dg WHERE dg.deleted = false AND dg.id = :id")
     DeGiay findByIdAndNotDeleted(@Param("id") Integer id);

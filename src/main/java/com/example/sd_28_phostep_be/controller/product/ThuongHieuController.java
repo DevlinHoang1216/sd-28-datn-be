@@ -51,15 +51,6 @@ public class ThuongHieuController {
             if (thuongHieu.getTenThuongHieu() == null || thuongHieu.getTenThuongHieu().trim().isEmpty()) {
                 return ResponseEntity.badRequest().body("Tên thương hiệu không được để trống");
             }
-            
-            if (thuongHieu.getMaThuongHieu() == null || thuongHieu.getMaThuongHieu().trim().isEmpty()) {
-                return ResponseEntity.badRequest().body("Mã thương hiệu không được để trống");
-            }
-
-            // Check if code already exists
-            if (thuongHieuService.existsByMaThuongHieu(thuongHieu.getMaThuongHieu())) {
-                return ResponseEntity.badRequest().body("Mã thương hiệu đã tồn tại");
-            }
 
             ThuongHieu savedThuongHieu = thuongHieuService.save(thuongHieu);
             return ResponseEntity.status(HttpStatus.CREATED).body(savedThuongHieu);
@@ -75,15 +66,6 @@ public class ThuongHieuController {
             // Validate required fields
             if (thuongHieu.getTenThuongHieu() == null || thuongHieu.getTenThuongHieu().trim().isEmpty()) {
                 return ResponseEntity.badRequest().body("Tên thương hiệu không được để trống");
-            }
-            
-            if (thuongHieu.getMaThuongHieu() == null || thuongHieu.getMaThuongHieu().trim().isEmpty()) {
-                return ResponseEntity.badRequest().body("Mã thương hiệu không được để trống");
-            }
-
-            // Check if code already exists for other records
-            if (thuongHieuService.existsByMaThuongHieuAndIdNot(thuongHieu.getMaThuongHieu(), id)) {
-                return ResponseEntity.badRequest().body("Mã thương hiệu đã tồn tại");
             }
 
             ThuongHieu updatedThuongHieu = thuongHieuService.update(id, thuongHieu);
@@ -114,18 +96,34 @@ public class ThuongHieuController {
         }
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable Integer id) {
+    @GetMapping("/check-name-exists")
+    public ResponseEntity<?> checkNameExists(
+            @RequestParam String name,
+            @RequestParam(required = false) Integer excludeId) {
         try {
-            boolean deleted = thuongHieuService.deleteById(id);
-            if (deleted) {
-                return ResponseEntity.ok().body("Xóa thương hiệu thành công");
-            } else {
-                return ResponseEntity.notFound().build();
-            }
+            boolean exists = thuongHieuService.checkNameExists(name.trim(), excludeId);
+            return ResponseEntity.ok().body(new CheckExistsResponse(exists));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Có lỗi xảy ra khi xóa thương hiệu: " + e.getMessage());
+                    .body("Có lỗi xảy ra khi kiểm tra tên thương hiệu: " + e.getMessage());
         }
     }
+
+    // Inner class for response
+    public static class CheckExistsResponse {
+        private boolean exists;
+
+        public CheckExistsResponse(boolean exists) {
+            this.exists = exists;
+        }
+
+        public boolean isExists() {
+            return exists;
+        }
+
+        public void setExists(boolean exists) {
+            this.exists = exists;
+        }
+    }
+
 }

@@ -13,6 +13,8 @@ public interface ChatLieuRepository extends JpaRepository<ChatLieu, Integer> {
     
     @Query("SELECT cl FROM ChatLieu cl WHERE " +
            "(:keyword IS NULL OR :keyword = '' OR " +
+           "LOWER(REPLACE(cl.tenChatLieu, ' ', '')) LIKE LOWER(REPLACE(CONCAT('%', :keyword, '%'), ' ', '')) OR " +
+           "LOWER(REPLACE(cl.maChatLieu, ' ', '')) LIKE LOWER(REPLACE(CONCAT('%', :keyword, '%'), ' ', '')) OR " +
            "LOWER(cl.tenChatLieu) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "LOWER(cl.maChatLieu) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Page<ChatLieu> findAllWithKeyword(@Param("keyword") String keyword, Pageable pageable);
@@ -20,4 +22,8 @@ public interface ChatLieuRepository extends JpaRepository<ChatLieu, Integer> {
     boolean existsByMaChatLieu(String maChatLieu);
     
     boolean existsByMaChatLieuAndIdNot(String maChatLieu, Integer id);
+    
+    boolean existsByTenChatLieu(String tenChatLieu);
+    
+    boolean existsByTenChatLieuAndIdNot(String tenChatLieu, Integer id);
 }

@@ -13,6 +13,8 @@ public interface ThuongHieuRepository extends JpaRepository<ThuongHieu, Integer>
     
     @Query("SELECT th FROM ThuongHieu th WHERE " +
            "(:keyword IS NULL OR :keyword = '' OR " +
+           "LOWER(REPLACE(th.tenThuongHieu, ' ', '')) LIKE LOWER(REPLACE(CONCAT('%', :keyword, '%'), ' ', '')) OR " +
+           "LOWER(REPLACE(th.maThuongHieu, ' ', '')) LIKE LOWER(REPLACE(CONCAT('%', :keyword, '%'), ' ', '')) OR " +
            "LOWER(th.tenThuongHieu) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "LOWER(th.maThuongHieu) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Page<ThuongHieu> findAllWithKeyword(@Param("keyword") String keyword, Pageable pageable);
@@ -20,4 +22,8 @@ public interface ThuongHieuRepository extends JpaRepository<ThuongHieu, Integer>
     boolean existsByMaThuongHieu(String maThuongHieu);
     
     boolean existsByMaThuongHieuAndIdNot(String maThuongHieu, Integer id);
+    
+    boolean existsByTenThuongHieu(String tenThuongHieu);
+    
+    boolean existsByTenThuongHieuAndIdNot(String tenThuongHieu, Integer id);
 }

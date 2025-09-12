@@ -51,15 +51,6 @@ public class ChatLieuController {
             if (chatLieu.getTenChatLieu() == null || chatLieu.getTenChatLieu().trim().isEmpty()) {
                 return ResponseEntity.badRequest().body("Tên chất liệu không được để trống");
             }
-            
-            if (chatLieu.getMaChatLieu() == null || chatLieu.getMaChatLieu().trim().isEmpty()) {
-                return ResponseEntity.badRequest().body("Mã chất liệu không được để trống");
-            }
-
-            // Check if code already exists
-            if (chatLieuService.existsByMaChatLieu(chatLieu.getMaChatLieu())) {
-                return ResponseEntity.badRequest().body("Mã chất liệu đã tồn tại");
-            }
 
             ChatLieu savedChatLieu = chatLieuService.save(chatLieu);
             return ResponseEntity.status(HttpStatus.CREATED).body(savedChatLieu);
@@ -75,15 +66,6 @@ public class ChatLieuController {
             // Validate required fields
             if (chatLieu.getTenChatLieu() == null || chatLieu.getTenChatLieu().trim().isEmpty()) {
                 return ResponseEntity.badRequest().body("Tên chất liệu không được để trống");
-            }
-            
-            if (chatLieu.getMaChatLieu() == null || chatLieu.getMaChatLieu().trim().isEmpty()) {
-                return ResponseEntity.badRequest().body("Mã chất liệu không được để trống");
-            }
-
-            // Check if code already exists for other records
-            if (chatLieuService.existsByMaChatLieuAndIdNot(chatLieu.getMaChatLieu(), id)) {
-                return ResponseEntity.badRequest().body("Mã chất liệu đã tồn tại");
             }
 
             ChatLieu updatedChatLieu = chatLieuService.update(id, chatLieu);
@@ -114,18 +96,34 @@ public class ChatLieuController {
         }
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable Integer id) {
+    @GetMapping("/check-name-exists")
+    public ResponseEntity<?> checkNameExists(
+            @RequestParam String name,
+            @RequestParam(required = false) Integer excludeId) {
         try {
-            boolean deleted = chatLieuService.deleteById(id);
-            if (deleted) {
-                return ResponseEntity.ok().body("Xóa chất liệu thành công");
-            } else {
-                return ResponseEntity.notFound().build();
-            }
+            boolean exists = chatLieuService.checkNameExists(name.trim(), excludeId);
+            return ResponseEntity.ok().body(new CheckExistsResponse(exists));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Có lỗi xảy ra khi xóa chất liệu: " + e.getMessage());
+                    .body("Có lỗi xảy ra khi kiểm tra tên chất liệu: " + e.getMessage());
         }
     }
+
+    // Inner class for response
+    public static class CheckExistsResponse {
+        private boolean exists;
+
+        public CheckExistsResponse(boolean exists) {
+            this.exists = exists;
+        }
+
+        public boolean isExists() {
+            return exists;
+        }
+
+        public void setExists(boolean exists) {
+            this.exists = exists;
+        }
+    }
+
 }

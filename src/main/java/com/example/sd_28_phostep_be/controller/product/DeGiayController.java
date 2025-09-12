@@ -56,28 +56,38 @@ public class DeGiayController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createDeGiay(@RequestBody DeGiay deGiay) {
+    public ResponseEntity<?> create(@RequestBody DeGiay deGiay) {
         try {
+            // Validate required fields
+            if (deGiay.getTenDeGiay() == null || deGiay.getTenDeGiay().trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Tên đế giày không được để trống");
+            }
+
             DeGiay savedDeGiay = deGiayService.save(deGiay);
             return ResponseEntity.status(HttpStatus.CREATED).body(savedDeGiay);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Có lỗi xảy ra khi tạo đế giày");
+                    .body("Có lỗi xảy ra khi tạo đế giày: " + e.getMessage());
         }
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateDeGiay(@PathVariable Integer id, @RequestBody DeGiay deGiayDetails) {
         try {
+            // Validate required fields
+            if (deGiayDetails.getTenDeGiay() == null || deGiayDetails.getTenDeGiay().trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Tên đế giày không được để trống");
+            }
+
             DeGiay updatedDeGiay = deGiayService.update(id, deGiayDetails);
-            return ResponseEntity.ok(updatedDeGiay);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            if (updatedDeGiay != null) {
+                return ResponseEntity.ok(updatedDeGiay);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Có lỗi xảy ra khi cập nhật đế giày");
+                    .body("Có lỗi xảy ra khi cập nhật đế giày: " + e.getMessage());
         }
     }
 
@@ -93,20 +103,38 @@ public class DeGiayController {
             }
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Có lỗi xảy ra khi cập nhật trạng thái đế giày: " + e.getMessage());
+                    .body("Có lỗi xảy ra khi cập nhật trạng thái đế giày");
         }
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteDeGiay(@PathVariable Integer id) {
+    @GetMapping("/check-name-exists")
+    public ResponseEntity<?> checkNameExists(
+            @RequestParam String name,
+            @RequestParam(required = false) Integer excludeId) {
         try {
-            deGiayService.delete(id);
-            return ResponseEntity.ok().body("Xóa đế giày thành công");
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            boolean exists = deGiayService.checkNameExists(name.trim(), excludeId);
+            return ResponseEntity.ok().body(new CheckExistsResponse(exists));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Có lỗi xảy ra khi xóa đế giày");
+                    .body("Có lỗi xảy ra khi kiểm tra tên đế giày: " + e.getMessage());
         }
     }
+
+    // Inner class for response
+    public static class CheckExistsResponse {
+        private boolean exists;
+
+        public CheckExistsResponse(boolean exists) {
+            this.exists = exists;
+        }
+
+        public boolean isExists() {
+            return exists;
+        }
+
+        public void setExists(boolean exists) {
+            this.exists = exists;
+        }
+    }
+
 }
