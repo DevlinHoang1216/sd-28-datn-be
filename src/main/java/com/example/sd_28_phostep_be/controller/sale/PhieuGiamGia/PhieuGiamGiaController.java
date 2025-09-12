@@ -74,4 +74,16 @@ public class PhieuGiamGiaController {
         PhieuGiamGiaDetailResponse dto = phieuGiamGiaService.getDetail(id);
         return ResponseEntity.ok(dto);
     }
+    @PostMapping("/{pggId}/toggle-customer/{khId}")
+    public ResponseEntity<?> toggleCustomer(
+            @PathVariable Integer pggId,
+            @PathVariable Integer khId) {
+        try {
+            phieuGiamGiaService.toggleCustomer(pggId, khId);
+            return ResponseEntity.ok("Cập nhật khách hàng thành công!");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
 }
