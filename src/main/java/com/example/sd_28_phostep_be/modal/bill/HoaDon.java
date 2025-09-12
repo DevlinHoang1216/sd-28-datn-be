@@ -118,8 +118,4 @@ public class HoaDon {
 
     @OneToMany(mappedBy = "idHoaDon", fetch = FetchType.LAZY)
     private Set<HinhThucThanhToan> hinhThucThanhToan = new HashSet<>();
-
-    @Column(name = "giao_ca_id")
-    private Integer giaoCaId;
-
 }
