@@ -39,6 +39,7 @@ public class DanhMucService {
     public DanhMuc save(DanhMuc danhMuc) {
         if (danhMuc.getId() == null) {
             danhMuc.setNgayTao(Instant.now());
+            danhMuc.setDeleted(false);
         }
         danhMuc.setNgayCapNhat(Instant.now());
         return danhMucRepository.save(danhMuc);
@@ -49,27 +50,10 @@ public class DanhMucService {
         if (existingDanhMuc.isPresent()) {
             DanhMuc updated = existingDanhMuc.get();
             updated.setTenDanhMuc(danhMuc.getTenDanhMuc());
-            updated.setMaDanhMuc(danhMuc.getMaDanhMuc());
             updated.setNgayCapNhat(Instant.now());
             return danhMucRepository.save(updated);
         }
         return null;
-    }
-
-    public boolean deleteById(Integer id) {
-        if (danhMucRepository.existsById(id)) {
-            danhMucRepository.deleteById(id);
-            return true;
-        }
-        return false;
-    }
-
-    public boolean existsByMaDanhMuc(String maDanhMuc) {
-        return danhMucRepository.existsByMaDanhMuc(maDanhMuc);
-    }
-
-    public boolean existsByMaDanhMucAndIdNot(String maDanhMuc, Integer id) {
-        return danhMucRepository.existsByMaDanhMucAndIdNot(maDanhMuc, id);
     }
 
     public DanhMuc toggleStatus(Integer id) {
@@ -81,5 +65,12 @@ public class DanhMucService {
             return danhMucRepository.save(danhMuc);
         }
         return null;
+    }
+
+    public boolean checkNameExists(String tenDanhMuc, Integer excludeId) {
+        if (excludeId != null) {
+            return danhMucRepository.existsByTenDanhMucAndIdNot(tenDanhMuc, excludeId);
+        }
+        return danhMucRepository.existsByTenDanhMuc(tenDanhMuc);
     }
 }

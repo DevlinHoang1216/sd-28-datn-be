@@ -39,6 +39,7 @@ public class MauSacService {
     public MauSac save(MauSac mauSac) {
         if (mauSac.getId() == null) {
             mauSac.setNgayTao(Instant.now());
+            mauSac.setDeleted(false);
         }
         mauSac.setNgayCapNhat(Instant.now());
         return mauSacRepository.save(mauSac);
@@ -49,28 +50,11 @@ public class MauSacService {
         if (existingMauSac.isPresent()) {
             MauSac updated = existingMauSac.get();
             updated.setTenMauSac(mauSac.getTenMauSac());
-            updated.setMaMauSac(mauSac.getMaMauSac());
             updated.setHex(mauSac.getHex());
             updated.setNgayCapNhat(Instant.now());
             return mauSacRepository.save(updated);
         }
         return null;
-    }
-
-    public boolean deleteById(Integer id) {
-        if (mauSacRepository.existsById(id)) {
-            mauSacRepository.deleteById(id);
-            return true;
-        }
-        return false;
-    }
-
-    public boolean existsByMaMauSac(String maMauSac) {
-        return mauSacRepository.existsByMaMauSac(maMauSac);
-    }
-
-    public boolean existsByMaMauSacAndIdNot(String maMauSac, Integer id) {
-        return mauSacRepository.existsByMaMauSacAndIdNot(maMauSac, id);
     }
 
     public MauSac toggleStatus(Integer id) {
@@ -82,5 +66,19 @@ public class MauSacService {
             return mauSacRepository.save(mauSac);
         }
         return null;
+    }
+
+    public boolean checkNameExists(String tenMauSac, Integer excludeId) {
+        if (excludeId != null) {
+            return mauSacRepository.existsByTenMauSacAndIdNot(tenMauSac, excludeId);
+        }
+        return mauSacRepository.existsByTenMauSac(tenMauSac);
+    }
+
+    public boolean checkNameAndHexExists(String tenMauSac, String hex, Integer excludeId) {
+        if (excludeId != null) {
+            return mauSacRepository.existsByTenMauSacAndHexAndIdNot(tenMauSac, hex, excludeId);
+        }
+        return mauSacRepository.existsByTenMauSacAndHex(tenMauSac, hex);
     }
 }

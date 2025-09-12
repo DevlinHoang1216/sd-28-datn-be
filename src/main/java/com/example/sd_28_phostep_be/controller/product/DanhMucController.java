@@ -51,15 +51,6 @@ public class DanhMucController {
             if (danhMuc.getTenDanhMuc() == null || danhMuc.getTenDanhMuc().trim().isEmpty()) {
                 return ResponseEntity.badRequest().body("Tên danh mục không được để trống");
             }
-            
-            if (danhMuc.getMaDanhMuc() == null || danhMuc.getMaDanhMuc().trim().isEmpty()) {
-                return ResponseEntity.badRequest().body("Mã danh mục không được để trống");
-            }
-
-            // Check if code already exists
-            if (danhMucService.existsByMaDanhMuc(danhMuc.getMaDanhMuc())) {
-                return ResponseEntity.badRequest().body("Mã danh mục đã tồn tại");
-            }
 
             DanhMuc savedDanhMuc = danhMucService.save(danhMuc);
             return ResponseEntity.status(HttpStatus.CREATED).body(savedDanhMuc);
@@ -75,15 +66,6 @@ public class DanhMucController {
             // Validate required fields
             if (danhMuc.getTenDanhMuc() == null || danhMuc.getTenDanhMuc().trim().isEmpty()) {
                 return ResponseEntity.badRequest().body("Tên danh mục không được để trống");
-            }
-            
-            if (danhMuc.getMaDanhMuc() == null || danhMuc.getMaDanhMuc().trim().isEmpty()) {
-                return ResponseEntity.badRequest().body("Mã danh mục không được để trống");
-            }
-
-            // Check if code already exists for other records
-            if (danhMucService.existsByMaDanhMucAndIdNot(danhMuc.getMaDanhMuc(), id)) {
-                return ResponseEntity.badRequest().body("Mã danh mục đã tồn tại");
             }
 
             DanhMuc updatedDanhMuc = danhMucService.update(id, danhMuc);
@@ -114,18 +96,34 @@ public class DanhMucController {
         }
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable Integer id) {
+    @GetMapping("/check-name-exists")
+    public ResponseEntity<?> checkNameExists(
+            @RequestParam String name,
+            @RequestParam(required = false) Integer excludeId) {
         try {
-            boolean deleted = danhMucService.deleteById(id);
-            if (deleted) {
-                return ResponseEntity.ok().body("Xóa danh mục thành công");
-            } else {
-                return ResponseEntity.notFound().build();
-            }
+            boolean exists = danhMucService.checkNameExists(name.trim(), excludeId);
+            return ResponseEntity.ok().body(new CheckExistsResponse(exists));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Có lỗi xảy ra khi xóa danh mục: " + e.getMessage());
+                    .body("Có lỗi xảy ra khi kiểm tra tên danh mục: " + e.getMessage());
         }
     }
+
+    // Inner class for response
+    public static class CheckExistsResponse {
+        private boolean exists;
+
+        public CheckExistsResponse(boolean exists) {
+            this.exists = exists;
+        }
+
+        public boolean isExists() {
+            return exists;
+        }
+
+        public void setExists(boolean exists) {
+            this.exists = exists;
+        }
+    }
+
 }

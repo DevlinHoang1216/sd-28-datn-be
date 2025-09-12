@@ -51,15 +51,6 @@ public class KichCoController {
             if (kichCo.getTenKichCo() == null || kichCo.getTenKichCo().trim().isEmpty()) {
                 return ResponseEntity.badRequest().body("Tên kích cỡ không được để trống");
             }
-            
-            if (kichCo.getMaKichCo() == null || kichCo.getMaKichCo().trim().isEmpty()) {
-                return ResponseEntity.badRequest().body("Mã kích cỡ không được để trống");
-            }
-
-            // Check if code already exists
-            if (kichCoService.existsByMaKichCo(kichCo.getMaKichCo())) {
-                return ResponseEntity.badRequest().body("Mã kích cỡ đã tồn tại");
-            }
 
             KichCo savedKichCo = kichCoService.save(kichCo);
             return ResponseEntity.status(HttpStatus.CREATED).body(savedKichCo);
@@ -75,15 +66,6 @@ public class KichCoController {
             // Validate required fields
             if (kichCo.getTenKichCo() == null || kichCo.getTenKichCo().trim().isEmpty()) {
                 return ResponseEntity.badRequest().body("Tên kích cỡ không được để trống");
-            }
-            
-            if (kichCo.getMaKichCo() == null || kichCo.getMaKichCo().trim().isEmpty()) {
-                return ResponseEntity.badRequest().body("Mã kích cỡ không được để trống");
-            }
-
-            // Check if code already exists for other records
-            if (kichCoService.existsByMaKichCoAndIdNot(kichCo.getMaKichCo(), id)) {
-                return ResponseEntity.badRequest().body("Mã kích cỡ đã tồn tại");
             }
 
             KichCo updatedKichCo = kichCoService.update(id, kichCo);
@@ -114,18 +96,34 @@ public class KichCoController {
         }
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable Integer id) {
+    @GetMapping("/check-name-exists")
+    public ResponseEntity<?> checkNameExists(
+            @RequestParam String name,
+            @RequestParam(required = false) Integer excludeId) {
         try {
-            boolean deleted = kichCoService.deleteById(id);
-            if (deleted) {
-                return ResponseEntity.ok().body("Xóa kích cỡ thành công");
-            } else {
-                return ResponseEntity.notFound().build();
-            }
+            boolean exists = kichCoService.checkNameExists(name.trim(), excludeId);
+            return ResponseEntity.ok().body(new CheckExistsResponse(exists));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Có lỗi xảy ra khi xóa kích cỡ: " + e.getMessage());
+                    .body("Có lỗi xảy ra khi kiểm tra tên kích cỡ: " + e.getMessage());
         }
     }
+
+    // Inner class for response
+    public static class CheckExistsResponse {
+        private boolean exists;
+
+        public CheckExistsResponse(boolean exists) {
+            this.exists = exists;
+        }
+
+        public boolean isExists() {
+            return exists;
+        }
+
+        public void setExists(boolean exists) {
+            this.exists = exists;
+        }
+    }
+
 }

@@ -39,6 +39,7 @@ public class KichCoService {
     public KichCo save(KichCo kichCo) {
         if (kichCo.getId() == null) {
             kichCo.setNgayTao(Instant.now());
+            kichCo.setDeleted(false);
         }
         kichCo.setNgayCapNhat(Instant.now());
         return kichCoRepository.save(kichCo);
@@ -49,27 +50,10 @@ public class KichCoService {
         if (existingKichCo.isPresent()) {
             KichCo updated = existingKichCo.get();
             updated.setTenKichCo(kichCo.getTenKichCo());
-            updated.setMaKichCo(kichCo.getMaKichCo());
             updated.setNgayCapNhat(Instant.now());
             return kichCoRepository.save(updated);
         }
         return null;
-    }
-
-    public boolean deleteById(Integer id) {
-        if (kichCoRepository.existsById(id)) {
-            kichCoRepository.deleteById(id);
-            return true;
-        }
-        return false;
-    }
-
-    public boolean existsByMaKichCo(String maKichCo) {
-        return kichCoRepository.existsByMaKichCo(maKichCo);
-    }
-
-    public boolean existsByMaKichCoAndIdNot(String maKichCo, Integer id) {
-        return kichCoRepository.existsByMaKichCoAndIdNot(maKichCo, id);
     }
 
     public KichCo toggleStatus(Integer id) {
@@ -81,5 +65,12 @@ public class KichCoService {
             return kichCoRepository.save(kichCo);
         }
         return null;
+    }
+
+    public boolean checkNameExists(String tenKichCo, Integer excludeId) {
+        if (excludeId != null) {
+            return kichCoRepository.existsByTenKichCoAndIdNot(tenKichCo, excludeId);
+        }
+        return kichCoRepository.existsByTenKichCo(tenKichCo);
     }
 }

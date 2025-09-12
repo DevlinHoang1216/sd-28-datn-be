@@ -39,6 +39,7 @@ public class ThuongHieuService {
     public ThuongHieu save(ThuongHieu thuongHieu) {
         if (thuongHieu.getId() == null) {
             thuongHieu.setNgayTao(Instant.now());
+            thuongHieu.setDeleted(false);
         }
         thuongHieu.setNgayCapNhat(Instant.now());
         return thuongHieuRepository.save(thuongHieu);
@@ -49,28 +50,12 @@ public class ThuongHieuService {
         if (existingThuongHieu.isPresent()) {
             ThuongHieu updated = existingThuongHieu.get();
             updated.setTenThuongHieu(thuongHieu.getTenThuongHieu());
-            updated.setMaThuongHieu(thuongHieu.getMaThuongHieu());
             updated.setNgayCapNhat(Instant.now());
             return thuongHieuRepository.save(updated);
         }
         return null;
     }
 
-    public boolean deleteById(Integer id) {
-        if (thuongHieuRepository.existsById(id)) {
-            thuongHieuRepository.deleteById(id);
-            return true;
-        }
-        return false;
-    }
-
-    public boolean existsByMaThuongHieu(String maThuongHieu) {
-        return thuongHieuRepository.existsByMaThuongHieu(maThuongHieu);
-    }
-
-    public boolean existsByMaThuongHieuAndIdNot(String maThuongHieu, Integer id) {
-        return thuongHieuRepository.existsByMaThuongHieuAndIdNot(maThuongHieu, id);
-    }
 
     public ThuongHieu toggleStatus(Integer id) {
         Optional<ThuongHieu> existingThuongHieu = thuongHieuRepository.findById(id);
@@ -81,5 +66,12 @@ public class ThuongHieuService {
             return thuongHieuRepository.save(thuongHieu);
         }
         return null;
+    }
+
+    public boolean checkNameExists(String tenThuongHieu, Integer excludeId) {
+        if (excludeId != null) {
+            return thuongHieuRepository.existsByTenThuongHieuAndIdNot(tenThuongHieu, excludeId);
+        }
+        return thuongHieuRepository.existsByTenThuongHieu(tenThuongHieu);
     }
 }

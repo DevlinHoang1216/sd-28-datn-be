@@ -51,15 +51,6 @@ public class MauSacController {
             if (mauSac.getTenMauSac() == null || mauSac.getTenMauSac().trim().isEmpty()) {
                 return ResponseEntity.badRequest().body("Tên màu sắc không được để trống");
             }
-            
-            if (mauSac.getMaMauSac() == null || mauSac.getMaMauSac().trim().isEmpty()) {
-                return ResponseEntity.badRequest().body("Mã màu sắc không được để trống");
-            }
-
-            // Check if code already exists
-            if (mauSacService.existsByMaMauSac(mauSac.getMaMauSac())) {
-                return ResponseEntity.badRequest().body("Mã màu sắc đã tồn tại");
-            }
 
             MauSac savedMauSac = mauSacService.save(mauSac);
             return ResponseEntity.status(HttpStatus.CREATED).body(savedMauSac);
@@ -75,15 +66,6 @@ public class MauSacController {
             // Validate required fields
             if (mauSac.getTenMauSac() == null || mauSac.getTenMauSac().trim().isEmpty()) {
                 return ResponseEntity.badRequest().body("Tên màu sắc không được để trống");
-            }
-            
-            if (mauSac.getMaMauSac() == null || mauSac.getMaMauSac().trim().isEmpty()) {
-                return ResponseEntity.badRequest().body("Mã màu sắc không được để trống");
-            }
-
-            // Check if code already exists for other records
-            if (mauSacService.existsByMaMauSacAndIdNot(mauSac.getMaMauSac(), id)) {
-                return ResponseEntity.badRequest().body("Mã màu sắc đã tồn tại");
             }
 
             MauSac updatedMauSac = mauSacService.update(id, mauSac);
@@ -114,18 +96,48 @@ public class MauSacController {
         }
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable Integer id) {
+    @GetMapping("/check-name-exists")
+    public ResponseEntity<?> checkNameExists(
+            @RequestParam String name,
+            @RequestParam(required = false) Integer excludeId) {
         try {
-            boolean deleted = mauSacService.deleteById(id);
-            if (deleted) {
-                return ResponseEntity.ok().body("Xóa màu sắc thành công");
-            } else {
-                return ResponseEntity.notFound().build();
-            }
+            boolean exists = mauSacService.checkNameExists(name.trim(), excludeId);
+            return ResponseEntity.ok().body(new CheckExistsResponse(exists));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Có lỗi xảy ra khi xóa màu sắc: " + e.getMessage());
+                    .body("Có lỗi xảy ra khi kiểm tra tên màu sắc: " + e.getMessage());
         }
     }
+
+    @GetMapping("/check-name-and-hex-exists")
+    public ResponseEntity<?> checkNameAndHexExists(
+            @RequestParam String name,
+            @RequestParam String hex,
+            @RequestParam(required = false) Integer excludeId) {
+        try {
+            boolean exists = mauSacService.checkNameAndHexExists(name.trim(), hex.trim(), excludeId);
+            return ResponseEntity.ok().body(new CheckExistsResponse(exists));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Có lỗi xảy ra khi kiểm tra màu sắc: " + e.getMessage());
+        }
+    }
+
+    // Inner class for response
+    public static class CheckExistsResponse {
+        private boolean exists;
+
+        public CheckExistsResponse(boolean exists) {
+            this.exists = exists;
+        }
+
+        public boolean isExists() {
+            return exists;
+        }
+
+        public void setExists(boolean exists) {
+            this.exists = exists;
+        }
+    }
+
 }
