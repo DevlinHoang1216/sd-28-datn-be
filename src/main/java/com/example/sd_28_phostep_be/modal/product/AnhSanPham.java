@@ -1,5 +1,6 @@
 package com.example.sd_28_phostep_be.modal.product;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -44,12 +45,17 @@ public class AnhSanPham {
     @NotNull
     @ColumnDefault("0")
     @Column(name = "deleted", nullable = false)
+    @Builder.Default
     private Boolean deleted = false;
 
     @OneToMany(mappedBy = "idAnhSanPham")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "idAnhSanPham", "idSanPham"})
+    @Builder.Default
     private Set<ChiTietSanPham> chiTietSanPhams = new LinkedHashSet<>();
 
     @OneToMany(mappedBy = "idAnhSanPham")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "idAnhSanPham", "chiTietSanPhams"})
+    @Builder.Default
     private Set<SanPham> sanPhams = new LinkedHashSet<>();
 
 }

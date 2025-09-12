@@ -1,4 +1,4 @@
-package com.example.sd_28_phostep_be.config.clinet;
+package com.example.sd_28_phostep_be.config.client;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
