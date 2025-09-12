@@ -12,8 +12,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -123,7 +125,14 @@ public class PhieuGiamGiaServices {
         existingPgg.setMoTa(dto.getMoTa());
         existingPgg.setTrangThai(dto.getNgayKetThuc() != null && dto.getNgayKetThuc().isBefore(now) ? false : true);
 
-        return phieuGiamGiaRepository.save(existingPgg);
+        PhieuGiamGia saved = phieuGiamGiaRepository.save(existingPgg);
+
+        // ✅ Nếu riêng tư = false thì xóa hết PGG cá nhân có cùng id
+        if (Boolean.FALSE.equals(dto.getRiengTu())) {
+            phieuGiamGiaCaNhanRepository.deleteAllByPhieuGiamGiaId(saved.getId());
+        }
+
+        return saved;
     }
 
     public PhieuGiamGia delete(Integer id) {
@@ -159,17 +168,56 @@ public class PhieuGiamGiaServices {
                     phieuGiamGiaCaNhanRepository.findAllByIdPhieuGiamGiaId(pgg.getId());
 
             List<PhieuGiamGiaDetailResponse.CustomerDetail> customers = caNhanList.stream()
-                    .map(cn -> new PhieuGiamGiaDetailResponse.CustomerDetail(
-                            cn.getIdKhachHang().getId(),
-                            cn.getNgayNhan(),
-                            cn.getNgayHetHan()
-                    ))
-                    .collect(Collectors.toList());
-
+                    .map(cn -> {
+                        KhachHang kh = cn.getIdKhachHang();
+                        return new PhieuGiamGiaDetailResponse.CustomerDetail(
+                                kh.getId(),
+                                kh.getTaiKhoan().getEmail(),
+                                kh.getTaiKhoan().getSoDienThoai()
+                        );
+                    })
+                    // loại bỏ trùng theo idKhachHang
+                    .collect(Collectors.collectingAndThen(
+                            Collectors.toMap(
+                                    PhieuGiamGiaDetailResponse.CustomerDetail::getIdKhachHang,
+                                    c -> c,
+                                    (c1, c2) -> c1 // nếu trùng thì giữ 1 cái
+                            ),
+                            m -> new ArrayList(m.values())
+                    ));
             dto.setCustomers(customers);
         } else {
             dto.setCustomers(Collections.emptyList());
         }
         return dto;
+    }
+
+    public void toggleCustomer(Integer pggId, Integer khId) {
+        PhieuGiamGia pgg = phieuGiamGiaRepository.findById(pggId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy phiếu giảm giá"));
+
+        KhachHang kh = khachHangRepository.findById(khId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy khách hàng"));
+
+        // Kiểm tra KH đã có trong PGG chưa
+        Optional<PhieuGiamGiaCaNhan> existing = phieuGiamGiaCaNhanRepository
+                .findByIdPhieuGiamGiaAndIdKhachHang(pgg, kh);
+
+        if (existing.isPresent()) {
+            // Nếu đã tồn tại thì xóa
+            phieuGiamGiaCaNhanRepository.delete(existing.get());
+        } else {
+            // Nếu chưa có thì thêm mới
+            PhieuGiamGiaCaNhan newPggCn = PhieuGiamGiaCaNhan.builder()
+                    .idPhieuGiamGia(pgg)
+                    .idKhachHang(kh)
+                    .ma(pgg.getMa() + "-" + kh.getId())
+                    .ngayNhan(Instant.now())
+                    .ngayHetHan(pgg.getNgayKetThuc())
+                    .trangThai(true)
+                    .deleted(false)
+                    .build();
+            phieuGiamGiaCaNhanRepository.save(newPggCn);
+        }
     }
 }
