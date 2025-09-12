@@ -30,11 +30,6 @@ public class ChiTietSanPham {
     private Integer id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_chat_lieu", referencedColumnName = "id")
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-    private ChatLieu idChatLieu;
-
-    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_mau_sac", referencedColumnName = "id")
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private MauSac idMauSac;
@@ -91,11 +86,6 @@ public class ChiTietSanPham {
     @JoinColumn(name = "id_anh_san_pham", referencedColumnName = "id")
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "chiTietSanPhams", "sanPhams"})
     private AnhSanPham idAnhSanPham;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_de_giay", referencedColumnName = "id")
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-    private DeGiay idDeGiay;
 
     @OneToMany(mappedBy = "idChiTietSp")
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "idChiTietSp"})

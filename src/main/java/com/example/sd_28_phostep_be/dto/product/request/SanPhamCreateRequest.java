@@ -25,6 +25,8 @@ public class SanPhamCreateRequest {
     
     private Integer idDanhMuc;
     private Integer idThuongHieu;
+    private Integer idChatLieu;
+    private Integer idDeGiay;
     private String urlAnhDaiDien;
     private String trangThai;
 }

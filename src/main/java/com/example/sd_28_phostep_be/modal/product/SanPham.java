@@ -36,6 +36,16 @@ public class SanPham {
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private ThuongHieu idThuongHieu;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_de_giay", referencedColumnName = "id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    private DeGiay idDeGiay;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_chat_lieu", referencedColumnName = "id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    private ChatLieu idChatLieu;
+
     @Size(max = 255)
     @Nationalized
     @Column(name = "ma")

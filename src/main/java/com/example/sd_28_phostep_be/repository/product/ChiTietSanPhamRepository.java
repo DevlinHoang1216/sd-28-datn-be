@@ -18,7 +18,8 @@ public interface ChiTietSanPhamRepository extends JpaRepository<ChiTietSanPham, 
            "LEFT JOIN FETCH ctsp.idSanPham sp " +
            "LEFT JOIN FETCH sp.idDanhMuc " +
            "LEFT JOIN FETCH sp.idThuongHieu " +
-           "LEFT JOIN FETCH ctsp.idChatLieu " +
+           "LEFT JOIN FETCH sp.idChatLieu " +
+           "LEFT JOIN FETCH sp.idDeGiay " +
            "LEFT JOIN FETCH ctsp.idMauSac " +
            "LEFT JOIN FETCH ctsp.idKichCo " +
            "WHERE ctsp.deleted = false OR ctsp.deleted IS NULL")
@@ -31,7 +32,8 @@ public interface ChiTietSanPhamRepository extends JpaRepository<ChiTietSanPham, 
            "LEFT JOIN FETCH ctsp.idSanPham sp " +
            "LEFT JOIN FETCH sp.idDanhMuc " +
            "LEFT JOIN FETCH sp.idThuongHieu " +
-           "LEFT JOIN FETCH ctsp.idChatLieu " +
+           "LEFT JOIN FETCH sp.idChatLieu " +
+           "LEFT JOIN FETCH sp.idDeGiay " +
            "LEFT JOIN FETCH ctsp.idMauSac " +
            "LEFT JOIN FETCH ctsp.idKichCo " +
            "WHERE ctsp.idSanPham.id = :productId AND (ctsp.deleted = false OR ctsp.deleted IS NULL)")
