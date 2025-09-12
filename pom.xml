@@ -93,7 +93,7 @@
         <dependency>
             <groupId>com.cloudinary</groupId>
             <artifactId>cloudinary-http44</artifactId>
-            <version>1.39.0</version>
+            <version>1.34.0</version>
         </dependency>
 
         <dependency>
@@ -131,6 +131,12 @@
             <groupId>com.itextpdf</groupId>
             <artifactId>font-asian</artifactId>
             <version>7.2.5</version>
+        </dependency>
+
+        <!-- Jackson Hibernate6 Module for handling lazy loading serialization -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-hibernate6</artifactId>
         </dependency>
     </dependencies>
 

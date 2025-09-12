@@ -1,5 +1,6 @@
 package com.example.sd_28_phostep_be.modal.product;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -27,10 +28,12 @@ public class SanPham {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_danh_muc", referencedColumnName = "id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private DanhMuc idDanhMuc;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_thuong_hieu", referencedColumnName = "id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private ThuongHieu idThuongHieu;
 
     @Size(max = 255)
@@ -67,9 +70,14 @@ public class SanPham {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_anh_san_pham", referencedColumnName = "id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "chiTietSanPhams", "sanPhams"})
     private AnhSanPham idAnhSanPham;
 
+    // Remove urlAnhDaiDien field - use idAnhSanPham relationship instead
+
     @OneToMany(mappedBy = "idSanPham")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "idSanPham", "idAnhSanPham"})
+    @Builder.Default
     private Set<ChiTietSanPham> chiTietSanPhams = new LinkedHashSet<>();
 
 }

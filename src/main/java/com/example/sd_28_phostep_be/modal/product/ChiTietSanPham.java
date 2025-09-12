@@ -2,6 +2,7 @@ package com.example.sd_28_phostep_be.modal.product;
 
 import com.example.sd_28_phostep_be.modal.sale.ChiTietDotGiamGia;
 import com.example.sd_28_phostep_be.modal.sell.GioHangChiTiet;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -30,18 +31,22 @@ public class ChiTietSanPham {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_chat_lieu", referencedColumnName = "id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private ChatLieu idChatLieu;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_mau_sac", referencedColumnName = "id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private MauSac idMauSac;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_kich_co", referencedColumnName = "id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private KichCo idKichCo;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_san_pham", referencedColumnName = "id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "chiTietSanPhams"})
     private SanPham idSanPham;
 
     @Size(max = 255)
@@ -84,16 +89,22 @@ public class ChiTietSanPham {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_anh_san_pham", referencedColumnName = "id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "chiTietSanPhams", "sanPhams"})
     private AnhSanPham idAnhSanPham;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_de_giay", referencedColumnName = "id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private DeGiay idDeGiay;
 
     @OneToMany(mappedBy = "idChiTietSp")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "idChiTietSp"})
+    @Builder.Default
     private Set<ChiTietDotGiamGia> chiTietDotGiamGias = new LinkedHashSet<>();
 
     @OneToMany(mappedBy = "idChiTietSp")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "idChiTietSp"})
+    @Builder.Default
     private Set<GioHangChiTiet> gioHangChiTiets = new LinkedHashSet<>();
 
 }
