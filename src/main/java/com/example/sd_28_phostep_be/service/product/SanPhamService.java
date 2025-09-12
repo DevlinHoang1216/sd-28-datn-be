@@ -66,6 +66,16 @@ public class SanPhamService {
             thuongHieu.setId(request.getIdThuongHieu());
             existingSanPham.setIdThuongHieu(thuongHieu);
         }
+        if (request.getIdChatLieu() != null) {
+            ChatLieu chatLieu = new ChatLieu();
+            chatLieu.setId(request.getIdChatLieu());
+            existingSanPham.setIdChatLieu(chatLieu);
+        }
+        if (request.getIdDeGiay() != null) {
+            DeGiay deGiay = new DeGiay();
+            deGiay.setId(request.getIdDeGiay());
+            existingSanPham.setIdDeGiay(deGiay);
+        }
         if (request.getUrlAnhDaiDien() != null) {
             // Create or update AnhSanPham record
             AnhSanPham anhSanPham = new AnhSanPham();
@@ -104,6 +114,16 @@ public class SanPhamService {
             ThuongHieu thuongHieu = new ThuongHieu();
             thuongHieu.setId(request.getIdThuongHieu());
             sanPham.setIdThuongHieu(thuongHieu);
+        }
+        if (request.getIdChatLieu() != null) {
+            ChatLieu chatLieu = new ChatLieu();
+            chatLieu.setId(request.getIdChatLieu());
+            sanPham.setIdChatLieu(chatLieu);
+        }
+        if (request.getIdDeGiay() != null) {
+            DeGiay deGiay = new DeGiay();
+            deGiay.setId(request.getIdDeGiay());
+            sanPham.setIdDeGiay(deGiay);
         }
         if (request.getUrlAnhDaiDien() != null) {
             // Create AnhSanPham record for new product

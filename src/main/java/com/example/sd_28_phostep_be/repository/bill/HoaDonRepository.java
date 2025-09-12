@@ -67,7 +67,6 @@ public interface HoaDonRepository extends JpaRepository<HoaDon, Integer> {
             LEFT JOIN FETCH ctsp.idSanPham
             LEFT JOIN FETCH ctsp.idMauSac
             LEFT JOIN FETCH ctsp.idKichCo
-            LEFT JOIN FETCH ctsp.idChatLieu
             LEFT JOIN FETCH hd.lichSuHoaDon lshd
             LEFT JOIN FETCH lshd.idNhanVien
             LEFT JOIN FETCH hd.hinhThucThanhToan httt
