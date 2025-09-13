@@ -14,7 +14,6 @@ public class SanPhamCreateRequest {
     @Size(max = 255, message = "Tên sản phẩm không được vượt quá 255 ký tự")
     private String tenSanPham;
     
-    @NotBlank(message = "Mã sản phẩm không được để trống")
     @Size(max = 255, message = "Mã sản phẩm không được vượt quá 255 ký tự")
     private String ma;
     
