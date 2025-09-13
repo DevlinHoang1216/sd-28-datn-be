@@ -1,12 +1,17 @@
 package com.example.sd_28_phostep_be.controller.product;
 
+import com.example.sd_28_phostep_be.dto.product.request.ChiTietSanPhamUpdateRequest;
 import com.example.sd_28_phostep_be.modal.product.ChiTietSanPham;
 import com.example.sd_28_phostep_be.service.product.ChiTietSanPhamService;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Optional;
 
 
 @RestController
@@ -33,5 +38,27 @@ public class ChiTietSanPhamController {
             
         Pageable pageable = PageRequest.of(page, size, sort);
         return chiTietSanPhamService.getByProductIdPaged(productId, pageable);
+    }
+    
+    @GetMapping("/{id}")
+    public ResponseEntity<ChiTietSanPham> getById(@PathVariable Integer id) {
+        Optional<ChiTietSanPham> chiTietSanPham = chiTietSanPhamService.findById(id);
+        if (chiTietSanPham.isPresent()) {
+            return ResponseEntity.ok(chiTietSanPham.get());
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+    
+    @PutMapping("/{id}")
+    public ResponseEntity<ChiTietSanPham> updateChiTietSanPham(
+            @PathVariable Integer id,
+            @Valid @RequestBody ChiTietSanPhamUpdateRequest request) {
+        try {
+            ChiTietSanPham updatedChiTietSanPham = chiTietSanPhamService.updateChiTietSanPham(id, request);
+            return ResponseEntity.ok(updatedChiTietSanPham);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 }

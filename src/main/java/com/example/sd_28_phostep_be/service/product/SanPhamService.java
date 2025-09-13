@@ -1,5 +1,6 @@
 package com.example.sd_28_phostep_be.service.product;
 
+import com.example.sd_28_phostep_be.dto.product.request.ProductWithVariantsCreateRequest;
 import com.example.sd_28_phostep_be.dto.product.request.SanPhamCreateRequest;
 import com.example.sd_28_phostep_be.dto.product.request.SanPhamUpdateRequest;
 import com.example.sd_28_phostep_be.modal.product.*;
@@ -9,8 +10,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -20,11 +23,13 @@ import java.util.Optional;
 public class SanPhamService {
     private final SanPhamRepository sanPhamRepository;
     private final AnhSanPhamRepository anhSanPhamRepository;
+    private final ChiTietSanPhamService chiTietSanPhamService;
 
     @Autowired
-    public SanPhamService(SanPhamRepository sanPhamRepository, AnhSanPhamRepository anhSanPhamRepository) {
+    public SanPhamService(SanPhamRepository sanPhamRepository, AnhSanPhamRepository anhSanPhamRepository, ChiTietSanPhamService chiTietSanPhamService) {
         this.sanPhamRepository = sanPhamRepository;
         this.anhSanPhamRepository = anhSanPhamRepository;
+        this.chiTietSanPhamService = chiTietSanPhamService;
     }
 
     public Page<SanPham> getAllWithDetailsPaged(Pageable pageable) {
@@ -145,5 +150,55 @@ public class SanPhamService {
         sanPham.setDeleted(false);
         
         return sanPhamRepository.save(sanPham);
+    }
+
+    @Transactional
+    public SanPham createProductWithVariants(ProductWithVariantsCreateRequest request) {
+        // First create the main product
+        SanPham sanPham = createSanPham(request.getSanPham());
+        
+        // Generate product code after saving (so we have the ID)
+        String productCode = generateProductCode(sanPham.getId());
+        sanPham.setMa(productCode);
+        sanPham = sanPhamRepository.save(sanPham);
+        
+        // Then create all the product variants
+        List<ChiTietSanPham> createdVariants = chiTietSanPhamService.createProductVariants(sanPham, request.getChiTietSanPhams());
+        
+        // Set the variants to the product (optional, for response completeness)
+        sanPham.setChiTietSanPhams(new java.util.LinkedHashSet<>(createdVariants));
+        
+        return sanPham;
+    }
+    
+    private String generateProductCode(Integer productId) {
+        // Generate a unique product code
+        // Format: SP{productId}
+        return String.format("SP%d", productId);
+    }
+
+    @Transactional
+    public SanPham toggleProductStatus(Integer id) {
+        Optional<SanPham> optionalSanPham = sanPhamRepository.findById(id);
+        
+        if (optionalSanPham.isEmpty()) {
+            throw new RuntimeException("Sản phẩm không tồn tại với ID: " + id);
+        }
+        
+        SanPham sanPham = optionalSanPham.get();
+        
+        // Toggle the deleted status
+        Boolean currentStatus = sanPham.getDeleted();
+        Boolean newStatus = (currentStatus == null || !currentStatus) ? true : false;
+        sanPham.setDeleted(newStatus);
+        sanPham.setNgayCapNhat(Instant.now());
+        
+        // Save the updated product
+        SanPham updatedProduct = sanPhamRepository.save(sanPham);
+        
+        // Cascade the status change to all related product details
+        chiTietSanPhamService.updateDeletedStatusByProductId(id, newStatus);
+        
+        return updatedProduct;
     }
 }

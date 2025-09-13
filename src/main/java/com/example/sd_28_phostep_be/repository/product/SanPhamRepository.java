@@ -19,6 +19,6 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer> {
     @Query("SELECT sp FROM SanPham sp WHERE sp.deleted = false OR sp.deleted IS NULL")
     Page<SanPham> findAllActivePaged(Pageable pageable);
     
-    @Query("SELECT sp FROM SanPham sp LEFT JOIN FETCH sp.idDanhMuc LEFT JOIN FETCH sp.idThuongHieu LEFT JOIN FETCH sp.idChatLieu LEFT JOIN FETCH sp.idDeGiay WHERE sp.deleted = false OR sp.deleted IS NULL")
+    @Query("SELECT sp FROM SanPham sp LEFT JOIN FETCH sp.idDanhMuc LEFT JOIN FETCH sp.idThuongHieu LEFT JOIN FETCH sp.idChatLieu LEFT JOIN FETCH sp.idDeGiay")
     Page<SanPham> findAllActiveWithDetailsPaged(Pageable pageable);
 }
