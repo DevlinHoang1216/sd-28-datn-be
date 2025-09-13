@@ -29,6 +29,13 @@ public class ChiTietSanPhamService {
     public Page<ChiTietSanPham> getByProductIdPaged(Integer productId, Pageable pageable) {
         return chiTietSanPhamRepository.findByProductIdPaged(productId, pageable);
     }
+    
+    public Page<ChiTietSanPham> getAllWithFilters(Integer productId, String search, Integer sizeId, Integer colorId, 
+                                                 String status, Double minImportPrice, Double maxImportPrice, 
+                                                 Double minSellingPrice, Double maxSellingPrice, Pageable pageable) {
+        return chiTietSanPhamRepository.findAllWithFilters(productId, search, sizeId, colorId, status, 
+                                                          minImportPrice, maxImportPrice, minSellingPrice, maxSellingPrice, pageable);
+    }
 
     public List<ChiTietSanPham> createProductVariants(SanPham sanPham, List<ChiTietSanPhamCreateRequest> variantRequests) {
         List<ChiTietSanPham> createdVariants = new ArrayList<>();
