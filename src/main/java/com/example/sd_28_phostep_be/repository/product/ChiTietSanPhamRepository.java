@@ -39,6 +39,42 @@ public interface ChiTietSanPhamRepository extends JpaRepository<ChiTietSanPham, 
            "WHERE ctsp.idSanPham.id = :productId")
     Page<ChiTietSanPham> findByProductIdWithDetailsPaged(@Param("productId") Integer productId, Pageable pageable);
     
+    @Query("SELECT ctsp FROM ChiTietSanPham ctsp " +
+           "LEFT JOIN FETCH ctsp.idSanPham sp " +
+           "LEFT JOIN FETCH sp.idDanhMuc " +
+           "LEFT JOIN FETCH sp.idThuongHieu " +
+           "LEFT JOIN FETCH sp.idChatLieu " +
+           "LEFT JOIN FETCH sp.idDeGiay " +
+           "LEFT JOIN FETCH ctsp.idMauSac ms " +
+           "LEFT JOIN FETCH ctsp.idKichCo kc " +
+           "WHERE (:productId IS NULL OR ctsp.idSanPham.id = :productId) " +
+           "AND (:search IS NULL OR :search = '' OR " +
+           "     LOWER(REPLACE(sp.tenSanPham, ' ', '')) LIKE LOWER(REPLACE(CONCAT('%', :search, '%'), ' ', '')) OR " +
+           "     LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "     LOWER(REPLACE(ctsp.ma, ' ', '')) LIKE LOWER(REPLACE(CONCAT('%', :search, '%'), ' ', '')) OR " +
+           "     LOWER(ctsp.ma) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+           "AND (:sizeId IS NULL OR ctsp.idKichCo.id = :sizeId) " +
+           "AND (:colorId IS NULL OR ctsp.idMauSac.id = :colorId) " +
+           "AND (:status IS NULL OR :status = '' OR " +
+           "     (:status = 'active' AND (ctsp.deleted = false OR ctsp.deleted IS NULL) AND ctsp.soLuongTonKho > 5) OR " +
+           "     (:status = 'inactive' AND ctsp.deleted = true) OR " +
+           "     (:status = 'out_of_stock' AND (ctsp.deleted = false OR ctsp.deleted IS NULL) AND ctsp.soLuongTonKho = 0) OR " +
+           "     (:status = 'low_stock' AND (ctsp.deleted = false OR ctsp.deleted IS NULL) AND ctsp.soLuongTonKho > 0 AND ctsp.soLuongTonKho <= 5)) " +
+           "AND (:minImportPrice IS NULL OR ctsp.giaNhap >= :minImportPrice) " +
+           "AND (:maxImportPrice IS NULL OR ctsp.giaNhap <= :maxImportPrice) " +
+           "AND (:minSellingPrice IS NULL OR ctsp.giaBan >= :minSellingPrice) " +
+           "AND (:maxSellingPrice IS NULL OR ctsp.giaBan <= :maxSellingPrice)")
+    Page<ChiTietSanPham> findAllWithFilters(@Param("productId") Integer productId, 
+                                           @Param("search") String search,
+                                           @Param("sizeId") Integer sizeId,
+                                           @Param("colorId") Integer colorId,
+                                           @Param("status") String status,
+                                           @Param("minImportPrice") Double minImportPrice,
+                                           @Param("maxImportPrice") Double maxImportPrice,
+                                           @Param("minSellingPrice") Double minSellingPrice,
+                                           @Param("maxSellingPrice") Double maxSellingPrice,
+                                           Pageable pageable);
+    
     @Modifying
     @Query("UPDATE ChiTietSanPham ctsp SET ctsp.deleted = :deletedStatus, ctsp.ngayCapNhat = CURRENT_TIMESTAMP WHERE ctsp.idSanPham.id = :productId")
     void updateDeletedStatusByProductId(@Param("productId") Integer productId, @Param("deletedStatus") Boolean deletedStatus);

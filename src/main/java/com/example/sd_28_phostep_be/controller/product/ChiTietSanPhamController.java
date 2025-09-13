@@ -30,14 +30,47 @@ public class ChiTietSanPhamController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir) {
+            @RequestParam(defaultValue = "asc") String sortDir,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Integer sizeId,
+            @RequestParam(required = false) Integer colorId,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Double minImportPrice,
+            @RequestParam(required = false) Double maxImportPrice,
+            @RequestParam(required = false) Double minSellingPrice,
+            @RequestParam(required = false) Double maxSellingPrice) {
         
         Sort sort = sortDir.equalsIgnoreCase("desc") ? 
             Sort.by(sortBy).descending() : 
             Sort.by(sortBy).ascending();
             
         Pageable pageable = PageRequest.of(page, size, sort);
-        return chiTietSanPhamService.getByProductIdPaged(productId, pageable);
+        return chiTietSanPhamService.getAllWithFilters(productId, search, sizeId, colorId, status, 
+                                                      minImportPrice, maxImportPrice, minSellingPrice, maxSellingPrice, pageable);
+    }
+    
+    @GetMapping
+    public Page<ChiTietSanPham> getAllWithFilters(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Integer sizeId,
+            @RequestParam(required = false) Integer colorId,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Double minImportPrice,
+            @RequestParam(required = false) Double maxImportPrice,
+            @RequestParam(required = false) Double minSellingPrice,
+            @RequestParam(required = false) Double maxSellingPrice) {
+        
+        Sort sort = sortDir.equalsIgnoreCase("desc") ? 
+            Sort.by(sortBy).descending() : 
+            Sort.by(sortBy).ascending();
+            
+        Pageable pageable = PageRequest.of(page, size, sort);
+        return chiTietSanPhamService.getAllWithFilters(null, search, sizeId, colorId, status, 
+                                                      minImportPrice, maxImportPrice, minSellingPrice, maxSellingPrice, pageable);
     }
     
     @GetMapping("/{id}")
