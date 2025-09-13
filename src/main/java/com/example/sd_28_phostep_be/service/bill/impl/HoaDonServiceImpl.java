@@ -7,7 +7,7 @@ import com.example.sd_28_phostep_be.dto.bill.response.HoaDonDetailResponse;
 import com.example.sd_28_phostep_be.exception.ResourceNotFoundException;
 import com.example.sd_28_phostep_be.modal.bill.HoaDon;
 import com.example.sd_28_phostep_be.modal.bill.LichSuHoaDon;
-import com.example.sd_28_phostep_be.repository.account.NhanVienRepository;
+import com.example.sd_28_phostep_be.repository.account.NhanVien.NhanVienRepository;
 import com.example.sd_28_phostep_be.repository.bill.HoaDonRepository;
 import com.example.sd_28_phostep_be.repository.bill.LichSuHoaDonRepository;
 import com.example.sd_28_phostep_be.service.bill.HoaDonService;
