@@ -1,10 +1,10 @@
-package com.example.sd_28_phostep_be.controller.account.KhachHang;
+package com.example.sd_28_phostep_be.controller.account.NhanVien;
 
-import com.example.sd_28_phostep_be.dto.account.request.KhachHang.KhachHangCreateRequest;
-import com.example.sd_28_phostep_be.dto.account.request.KhachHang.KhachHangUpdateRequest;
-import com.example.sd_28_phostep_be.dto.account.response.KhachHang.KhachHangDTOResponse;
-import com.example.sd_28_phostep_be.dto.account.response.KhachHang.KhachHangDetailResponse;
-import com.example.sd_28_phostep_be.service.account.KhachHang.KhachHangService;
+import com.example.sd_28_phostep_be.dto.account.request.NhanVien.NhanVienCreateRequest;
+import com.example.sd_28_phostep_be.dto.account.request.NhanVien.NhanVienUpdateRequest;
+import com.example.sd_28_phostep_be.dto.account.response.NhanVien.NhanVienDTOResponse;
+import com.example.sd_28_phostep_be.dto.account.response.NhanVien.NhanVienDetailResponse;
+import com.example.sd_28_phostep_be.service.account.NhanVien.NhanVienService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -14,26 +14,26 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.sql.Date;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/khach-hang")
+@RequestMapping("/api/nhan-vien")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
-public class KhachHangController {
+public class NhanVienController {
 
-    private final KhachHangService khachHangService;
+    private final NhanVienService nhanVienService;
 
     @GetMapping("/home")
-    public ResponseEntity<Map<String, Object>> getAllKhachHang(
+    public ResponseEntity<Map<String, Object>> getAllNhanVien(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) Short gioiTinh,
+            @RequestParam(required = false) Boolean gioiTinh,
             @RequestParam(required = false) Boolean trangThai,
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
@@ -45,17 +45,17 @@ public class KhachHangController {
             Pageable pageable = PageRequest.of(page, size, sort);
             
             // Try to parse keyword as date if it looks like a date
-            Instant keywordAsDate = null;
+            Date keywordAsDate = null;
             if (keyword != null && !keyword.trim().isEmpty()) {
                 try {
                     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-                    keywordAsDate = dateFormat.parse(keyword).toInstant();
+                    keywordAsDate = new Date(dateFormat.parse(keyword).getTime());
                 } catch (ParseException e) {
                     // Not a date, keep keywordAsDate as null
                 }
             }
 
-            Page<KhachHangDTOResponse> result = khachHangService.getAllKhachHang(
+            Page<NhanVienDTOResponse> result = nhanVienService.getAllNhanVien(
                 keyword, keywordAsDate, gioiTinh, trangThai, pageable);
 
             Map<String, Object> response = new HashMap<>();
@@ -70,19 +70,19 @@ public class KhachHangController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Lỗi khi lấy danh sách khách hàng: " + e.getMessage());
+            errorResponse.put("error", "Lỗi khi lấy danh sách nhân viên: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> getKhachHangById(@PathVariable Integer id) {
+    public ResponseEntity<Map<String, Object>> getNhanVienById(@PathVariable Integer id) {
         try {
-            KhachHangDetailResponse khachHang = khachHangService.getKhachHangById(id);
+            NhanVienDetailResponse nhanVien = nhanVienService.getNhanVienById(id);
             
             Map<String, Object> response = new HashMap<>();
-            response.put("data", khachHang);
-            response.put("message", "Lấy thông tin khách hàng thành công");
+            response.put("data", nhanVien);
+            response.put("message", "Lấy thông tin nhân viên thành công");
             
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
@@ -91,19 +91,19 @@ public class KhachHangController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
         } catch (Exception e) {
             Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Lỗi khi lấy thông tin khách hàng: " + e.getMessage());
+            errorResponse.put("error", "Lỗi khi lấy thông tin nhân viên: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
 
-    @PostMapping("/them-khach-hang")
-    public ResponseEntity<Map<String, Object>> createKhachHang(@RequestBody KhachHangCreateRequest request) {
+    @PostMapping("/them-nhan-vien")
+    public ResponseEntity<Map<String, Object>> createNhanVien(@RequestBody NhanVienCreateRequest request) {
         try {
-            KhachHangDetailResponse khachHang = khachHangService.createKhachHang(request);
+            NhanVienDetailResponse nhanVien = nhanVienService.createNhanVien(request);
             
             Map<String, Object> response = new HashMap<>();
-            response.put("data", khachHang);
-            response.put("message", "Tạo khách hàng thành công");
+            response.put("data", nhanVien);
+            response.put("message", "Tạo nhân viên thành công");
             
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (RuntimeException e) {
@@ -112,21 +112,21 @@ public class KhachHangController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         } catch (Exception e) {
             Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Lỗi khi tạo khách hàng: " + e.getMessage());
+            errorResponse.put("error", "Lỗi khi tạo nhân viên: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> updateKhachHang(
+    public ResponseEntity<Map<String, Object>> updateNhanVien(
             @PathVariable Integer id, 
-            @RequestBody KhachHangUpdateRequest request) {
+            @RequestBody NhanVienUpdateRequest request) {
         try {
-            KhachHangDetailResponse khachHang = khachHangService.updateKhachHang(id, request);
+            NhanVienDetailResponse nhanVien = nhanVienService.updateNhanVien(id, request);
             
             Map<String, Object> response = new HashMap<>();
-            response.put("data", khachHang);
-            response.put("message", "Cập nhật khách hàng thành công");
+            response.put("data", nhanVien);
+            response.put("message", "Cập nhật nhân viên thành công");
             
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
@@ -135,18 +135,18 @@ public class KhachHangController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
         } catch (Exception e) {
             Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Lỗi khi cập nhật khách hàng: " + e.getMessage());
+            errorResponse.put("error", "Lỗi khi cập nhật nhân viên: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> deleteKhachHang(@PathVariable Integer id) {
+    public ResponseEntity<Map<String, Object>> deleteNhanVien(@PathVariable Integer id) {
         try {
-            khachHangService.deleteKhachHang(id);
+            nhanVienService.deleteNhanVien(id);
             
             Map<String, Object> response = new HashMap<>();
-            response.put("message", "Xóa khách hàng thành công");
+            response.put("message", "Xóa nhân viên thành công");
             
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
@@ -155,18 +155,18 @@ public class KhachHangController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
         } catch (Exception e) {
             Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Lỗi khi xóa khách hàng: " + e.getMessage());
+            errorResponse.put("error", "Lỗi khi xóa nhân viên: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
 
     @PutMapping("/{id}/restore")
-    public ResponseEntity<Map<String, Object>> restoreKhachHang(@PathVariable Integer id) {
+    public ResponseEntity<Map<String, Object>> restoreNhanVien(@PathVariable Integer id) {
         try {
-            khachHangService.restoreKhachHang(id);
+            nhanVienService.restoreNhanVien(id);
             
             Map<String, Object> response = new HashMap<>();
-            response.put("message", "Khôi phục khách hàng thành công");
+            response.put("message", "Khôi phục nhân viên thành công");
             
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
@@ -175,7 +175,7 @@ public class KhachHangController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
         } catch (Exception e) {
             Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Lỗi khi khôi phục khách hàng: " + e.getMessage());
+            errorResponse.put("error", "Lỗi khi khôi phục nhân viên: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
