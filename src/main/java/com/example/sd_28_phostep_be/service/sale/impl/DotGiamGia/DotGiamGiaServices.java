@@ -1,6 +1,8 @@
 package com.example.sd_28_phostep_be.service.sale.impl.DotGiamGia;
 
+import com.example.sd_28_phostep_be.dto.product.response.sanpham.SanPhamDetailResponse;
 import com.example.sd_28_phostep_be.dto.sale.request.DotGiamGia.DotGiamGiaDTO;
+import com.example.sd_28_phostep_be.dto.sale.response.DotGiamGia.DotGiamGiaDetailResponse;
 import com.example.sd_28_phostep_be.modal.product.ChiTietSanPham;
 import com.example.sd_28_phostep_be.modal.sale.ChiTietDotGiamGia;
 import com.example.sd_28_phostep_be.modal.sale.DotGiamGia;
@@ -11,6 +13,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.ZoneOffset;
 import java.util.List;
 
 @Service
@@ -92,4 +95,40 @@ public class DotGiamGiaServices {
         // không cho < 0
         return giaSau.max(BigDecimal.ZERO);
     }
+
+    @Transactional
+    public DotGiamGiaDetailResponse getDotGiamGiaDetail(Integer id) {
+        DotGiamGia dot = dotGiamGiaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đợt giảm giá"));
+
+        // lấy danh sách chi tiết sản phẩm thuộc đợt giảm giá
+        List<ChiTietDotGiamGia> chiTietList =
+                chiTietDotGiamGiaRepository.findByIdDotGiamGia_IdAndDeletedFalse(id);
+
+        // map sang DTO sản phẩm
+        List<SanPhamDetailResponse> sanPhamDtos = chiTietList.stream()
+                .map(ct -> SanPhamDetailResponse.builder()
+                        .idSanPham(ct.getIdChiTietSp().getId())
+                        .tenSanPham(ct.getIdChiTietSp().getIdSanPham().getTenSanPham())
+                        .maSanPham(ct.getIdChiTietSp().getMa())
+                        .giaBanDau(ct.getGiaBanDau())
+                        .giaSauKhiGiam(ct.getGiaSauKhiGiam())
+                        .build())
+                .toList();
+
+        // build response
+        return DotGiamGiaDetailResponse.builder()
+                .id(dot.getId())
+                .ma(dot.getMa())
+                .tenDotGiamGia(dot.getTenDotGiamGia())
+                .loaiGiamGiaApDung(dot.getLoaiGiamGiaApDung())
+                .giaTriGiamGia(dot.getGiaTriGiamGia())
+                .soTienGiamToiDa(dot.getSoTienGiamToiDa())
+                .ngayBatDau(dot.getNgayBatDau().atStartOfDay().toInstant(ZoneOffset.UTC)) // convert LocalDate -> Instant
+                .ngayKetThuc(dot.getNgayKetThuc().atStartOfDay().toInstant(ZoneOffset.UTC))
+                .trangThai(dot.getTrangThai())
+                .danhSachSanPham(sanPhamDtos)
+                .build();
+    }
+
 }

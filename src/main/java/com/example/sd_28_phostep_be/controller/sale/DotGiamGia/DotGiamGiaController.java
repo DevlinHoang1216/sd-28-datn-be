@@ -2,6 +2,7 @@ package com.example.sd_28_phostep_be.controller.sale.DotGiamGia;
 
 
 import com.example.sd_28_phostep_be.dto.sale.request.DotGiamGia.DotGiamGiaDTO;
+import com.example.sd_28_phostep_be.dto.sale.response.DotGiamGia.DotGiamGiaDetailResponse;
 import com.example.sd_28_phostep_be.modal.sale.DotGiamGia;
 import com.example.sd_28_phostep_be.service.sale.impl.DotGiamGia.DotGiamGiaServices;
 import org.springframework.http.ResponseEntity;
@@ -29,5 +30,10 @@ public class DotGiamGiaController {
     public ResponseEntity<?> addDotGiamGia(@RequestBody DotGiamGiaDTO dto) {
         DotGiamGia dot = dotGiamGiaServices.addDotGiamGia(dto);
         return ResponseEntity.ok(dot);
+    }
+
+    @GetMapping("/detail/{id}")
+    public ResponseEntity<DotGiamGiaDetailResponse> getDetail(@PathVariable Integer id) {
+        return ResponseEntity.ok(dotGiamGiaServices.getDotGiamGiaDetail(id));
     }
 }
