@@ -2,10 +2,13 @@ package com.example.sd_28_phostep_be.controller.sales;
 
 import com.example.sd_28_phostep_be.dto.account.request.KhachHang.KhachHangQuickCreateRequest;
 import com.example.sd_28_phostep_be.dto.account.response.KhachHang.KhachHangDTOResponse;
+import com.example.sd_28_phostep_be.dto.bill.request.UpdateCustomerRequest;
 import com.example.sd_28_phostep_be.modal.account.KhachHang;
+import com.example.sd_28_phostep_be.modal.bill.HoaDon;
 import com.example.sd_28_phostep_be.modal.product.ChiTietSanPham;
 import com.example.sd_28_phostep_be.modal.product.SanPham;
 import com.example.sd_28_phostep_be.service.account.Client.impl.KhachHang.KhachHangServices;
+import com.example.sd_28_phostep_be.service.bill.HoaDonService;
 import com.example.sd_28_phostep_be.service.product.ChiTietSanPhamService;
 import com.example.sd_28_phostep_be.service.product.SanPhamService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,12 +29,15 @@ public class BanHangController {
     private final SanPhamService sanPhamService;
     private final ChiTietSanPhamService chiTietSanPhamService;
     private final KhachHangServices khachHangServices;
+    private final HoaDonService hoaDonService;
 
     @Autowired
-    public BanHangController(SanPhamService sanPhamService, ChiTietSanPhamService chiTietSanPhamService, KhachHangServices khachHangServices) {
+    public BanHangController(SanPhamService sanPhamService, ChiTietSanPhamService chiTietSanPhamService, 
+                           KhachHangServices khachHangServices, HoaDonService hoaDonService) {
         this.sanPhamService = sanPhamService;
         this.chiTietSanPhamService = chiTietSanPhamService;
         this.khachHangServices = khachHangServices;
+        this.hoaDonService = hoaDonService;
     }
 
     /**
@@ -105,5 +111,43 @@ public class BanHangController {
     public ResponseEntity<KhachHang> quickCreateCustomer(@RequestBody KhachHangQuickCreateRequest request) {
         KhachHang newCustomer = khachHangServices.quickCreateCustomer(request);
         return ResponseEntity.ok(newCustomer);
+    }
+
+    /**
+     * Get all pending invoices for sales counter (status = 1)
+     */
+    @GetMapping("/hoa-don-cho")
+    public ResponseEntity<List<HoaDon>> getPendingInvoices() {
+        List<HoaDon> pendingInvoices = hoaDonService.getPendingInvoicesForSales();
+        return ResponseEntity.ok(pendingInvoices);
+    }
+
+    /**
+     * Create new pending invoice for sales counter
+     */
+    @PostMapping("/hoa-don-cho")
+    public ResponseEntity<HoaDon> createPendingInvoice() {
+        HoaDon newInvoice = hoaDonService.createPendingInvoice();
+        return ResponseEntity.ok(newInvoice);
+    }
+
+    /**
+     * Update pending invoice customer information
+     */
+    @PutMapping("/hoa-don-cho/{id}/khach-hang")
+    public ResponseEntity<HoaDon> updatePendingInvoiceCustomer(
+            @PathVariable Integer id, 
+            @RequestBody UpdateCustomerRequest request) {
+        HoaDon updatedInvoice = hoaDonService.updatePendingInvoiceCustomer(id, request);
+        return ResponseEntity.ok(updatedInvoice);
+    }
+
+    /**
+     * Delete pending invoice (soft delete)
+     */
+    @DeleteMapping("/hoa-don-cho/{id}")
+    public ResponseEntity<Void> deletePendingInvoice(@PathVariable Integer id) {
+        hoaDonService.deletePendingInvoice(id);
+        return ResponseEntity.ok().build();
     }
 }

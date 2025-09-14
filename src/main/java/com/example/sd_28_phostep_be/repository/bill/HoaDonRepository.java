@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.sql.Timestamp;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -71,7 +72,7 @@ public interface HoaDonRepository extends JpaRepository<HoaDon, Integer> {
             LEFT JOIN FETCH lshd.idNhanVien
             LEFT JOIN FETCH hd.hinhThucThanhToan httt
             LEFT JOIN FETCH httt.idPhuongThucThanhToan
-            WHERE hd.id = :id AND hd.deleted = false
+            WHERE hd.id = :id
             """)
     Optional<HoaDon> findHoaDonDetailById(@Param("id") Integer id);
 
@@ -84,4 +85,8 @@ public interface HoaDonRepository extends JpaRepository<HoaDon, Integer> {
     // Tìm hóa đơn theo mã
     @Query("SELECT hd FROM HoaDon hd WHERE hd.ma = :ma")
     Optional<HoaDon> findByMa(@Param("ma") String ma);
+    
+    // Get pending invoices for sales counter (status = 0, deleted = true)
+    @Query("SELECT hd FROM HoaDon hd LEFT JOIN FETCH hd.idKhachHang WHERE hd.trangThai = 0 AND hd.deleted = true")
+    List<HoaDon> findPendingInvoicesForSales();
 }
