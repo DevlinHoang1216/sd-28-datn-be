@@ -21,4 +21,16 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer> {
     
     @Query("SELECT sp FROM SanPham sp LEFT JOIN FETCH sp.idDanhMuc LEFT JOIN FETCH sp.idThuongHieu LEFT JOIN FETCH sp.idChatLieu LEFT JOIN FETCH sp.idDeGiay")
     Page<SanPham> findAllActiveWithDetailsPaged(Pageable pageable);
+    
+    /**
+     * Find active products for sales counter
+     */
+    @Query("SELECT sp FROM SanPham sp LEFT JOIN FETCH sp.idDanhMuc LEFT JOIN FETCH sp.idThuongHieu LEFT JOIN FETCH sp.idChatLieu LEFT JOIN FETCH sp.idDeGiay WHERE (sp.deleted = false OR sp.deleted IS NULL)")
+    Page<SanPham> findActiveProductsForSales(Pageable pageable);
+    
+    /**
+     * Find active products for sales counter with keyword search
+     */
+    @Query("SELECT sp FROM SanPham sp LEFT JOIN FETCH sp.idDanhMuc LEFT JOIN FETCH sp.idThuongHieu LEFT JOIN FETCH sp.idChatLieu LEFT JOIN FETCH sp.idDeGiay WHERE (sp.deleted = false OR sp.deleted IS NULL) AND (LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(sp.ma) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Page<SanPham> findActiveProductsForSalesWithKeyword(Pageable pageable, String keyword);
 }

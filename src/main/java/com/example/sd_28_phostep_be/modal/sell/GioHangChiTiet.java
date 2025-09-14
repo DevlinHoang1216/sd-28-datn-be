@@ -4,9 +4,9 @@ import com.example.sd_28_phostep_be.modal.product.ChiTietSanPham;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
-import org.hibernate.annotations.Nationalized;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -30,18 +30,37 @@ public class GioHangChiTiet {
     @JoinColumn(name = "id_chi_tiet_sp", referencedColumnName = "id")
     private ChiTietSanPham idChiTietSp;
 
-    @Nationalized
-    @Column(name = "ma")
-    private String ma;
+    @ColumnDefault("1")
+    @Column(name = "so_luong", nullable = false)
+    @Builder.Default
+    private Integer soLuong = 1;
 
-    @ColumnDefault("0")
-    @Column(name = "trang_thai", columnDefinition = "tinyint not null")
-    private Short trangThai;
+    @Column(name = "gia", nullable = false, precision = 18, scale = 2)
+    private BigDecimal gia;
 
-    @Column(name = "tong_tien", nullable = false, precision = 18, scale = 2)
-    private BigDecimal tongTien;
+    @Column(name = "thanh_tien", nullable = false, precision = 18, scale = 2)
+    private BigDecimal thanhTien;
 
-    @Column(name = "deleted", nullable = false)
-    private Boolean deleted = false;
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
 
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        if (soLuong == null) {
+            soLuong = 1;
+        }
+        // Calculate thanh_tien automatically
+        if (gia != null && soLuong != null) {
+            thanhTien = gia.multiply(BigDecimal.valueOf(soLuong));
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        // Recalculate thanh_tien when updating
+        if (gia != null && soLuong != null) {
+            thanhTien = gia.multiply(BigDecimal.valueOf(soLuong));
+        }
+    }
 }
