@@ -15,6 +15,8 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class DotGiamGiaServices {
@@ -124,11 +126,71 @@ public class DotGiamGiaServices {
                 .loaiGiamGiaApDung(dot.getLoaiGiamGiaApDung())
                 .giaTriGiamGia(dot.getGiaTriGiamGia())
                 .soTienGiamToiDa(dot.getSoTienGiamToiDa())
-                .ngayBatDau(dot.getNgayBatDau().atStartOfDay().toInstant(ZoneOffset.UTC)) // convert LocalDate -> Instant
-                .ngayKetThuc(dot.getNgayKetThuc().atStartOfDay().toInstant(ZoneOffset.UTC))
+                .ngayBatDau(dot.getNgayBatDau()) // convert LocalDate -> Instant
+                .ngayKetThuc(dot.getNgayKetThuc())
                 .trangThai(dot.getTrangThai())
                 .danhSachSanPham(sanPhamDtos)
                 .build();
     }
+
+    @Transactional
+    public DotGiamGia updateDotGiamGia(Integer id, DotGiamGiaDTO dto) {
+        DotGiamGia dot = dotGiamGiaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đợt giảm giá"));
+
+        // 1. Update thông tin cơ bản
+        dot.setMa(dto.getMa());
+        dot.setTenDotGiamGia(dto.getTenDotGiamGia());
+        dot.setLoaiGiamGiaApDung(dto.getLoaiGiamGiaApDung());
+        dot.setGiaTriGiamGia(dto.getGiaTriGiamGia());
+        dot.setSoTienGiamToiDa(dto.getSoTienGiamToiDa());
+        dot.setNgayBatDau(dto.getNgayBatDau());
+        dot.setNgayKetThuc(dto.getNgayKetThuc());
+
+        DotGiamGia savedDot = dotGiamGiaRepository.save(dot);
+
+        // 2. Lấy chi tiết hiện tại
+        List<ChiTietDotGiamGia> oldChiTietList = chiTietDotGiamGiaRepository.findByIdDotGiamGia_IdAndDeletedFalse(id);
+
+        // Map cũ để so sánh
+        Map<Integer, ChiTietDotGiamGia> oldMap = oldChiTietList.stream()
+                .collect(Collectors.toMap(ct -> ct.getIdChiTietSp().getId(), ct -> ct));
+
+        // 3. Xử lý danh sách mới
+        for (ChiTietSanPham sp : chiTietSanPhamRepository.findAllById(dto.getListSanPhamId())) {
+            BigDecimal giaBanDau = sp.getGiaBan();
+            BigDecimal giaSauKhiGiam = tinhGiaSauKhiGiam(savedDot, giaBanDau);
+
+            if (oldMap.containsKey(sp.getId())) {
+                // Nếu sản phẩm đã tồn tại -> cập nhật giá
+                ChiTietDotGiamGia ctgg = oldMap.get(sp.getId());
+                ctgg.setGiaBanDau(giaBanDau);
+                ctgg.setGiaSauKhiGiam(giaSauKhiGiam);
+                chiTietDotGiamGiaRepository.save(ctgg);
+
+                oldMap.remove(sp.getId()); // bỏ khỏi map để tí nữa không xóa
+            } else {
+                // Nếu sản phẩm mới -> thêm mới
+                ChiTietDotGiamGia ctgg = ChiTietDotGiamGia.builder()
+                        .idDotGiamGia(savedDot)
+                        .idChiTietSp(sp)
+                        .ma("CTGG-" + sp.getId() + "-" + savedDot.getId())
+                        .giaBanDau(giaBanDau)
+                        .giaSauKhiGiam(giaSauKhiGiam)
+                        .deleted(false)
+                        .build();
+                chiTietDotGiamGiaRepository.save(ctgg);
+            }
+        }
+
+        // 4. Xóa hẳn những sản phẩm cũ không còn trong list mới
+        for (ChiTietDotGiamGia ct : oldMap.values()) {
+            chiTietDotGiamGiaRepository.delete(ct);
+        }
+
+        return savedDot;
+    }
+
+
 
 }

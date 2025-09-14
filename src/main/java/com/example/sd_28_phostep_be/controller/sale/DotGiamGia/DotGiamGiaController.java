@@ -36,4 +36,9 @@ public class DotGiamGiaController {
     public ResponseEntity<DotGiamGiaDetailResponse> getDetail(@PathVariable Integer id) {
         return ResponseEntity.ok(dotGiamGiaServices.getDotGiamGiaDetail(id));
     }
+
+    @PutMapping("/update/{id}")
+    public ResponseEntity<DotGiamGia> update(@PathVariable Integer id, @RequestBody DotGiamGiaDTO dto) {
+        return ResponseEntity.ok(dotGiamGiaServices.updateDotGiamGia(id, dto));
+    }
 }
