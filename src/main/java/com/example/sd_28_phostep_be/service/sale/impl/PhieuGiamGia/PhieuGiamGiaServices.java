@@ -12,6 +12,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -155,12 +156,17 @@ public class PhieuGiamGiaServices {
                 .soTienGiamToiDa(pgg.getSoTienGiamToiDa())
                 .hoaDonToiThieu(pgg.getHoaDonToiThieu())
                 .soLuongDung(pgg.getSoLuongDung())
-                .ngayBatDau(pgg.getNgayBatDau())
-                .ngayKetThuc(pgg.getNgayKetThuc())
+                .ngayBatDau(pgg.getNgayBatDau() != null
+                        ? pgg.getNgayBatDau().atZone(ZoneId.systemDefault()).toLocalDate()
+                        : null)
+                .ngayKetThuc(pgg.getNgayKetThuc() != null
+                        ? pgg.getNgayKetThuc().atZone(ZoneId.systemDefault()).toLocalDate()
+                        : null)
                 .trangThai(pgg.getTrangThai())
                 .riengTu(pgg.getRiengTu())
                 .moTa(pgg.getMoTa())
                 .build();
+
 
         // Nếu là PGG cá nhân (riengTu = true) thì load thêm dữ liệu
         if (Boolean.TRUE.equals(pgg.getRiengTu())) {

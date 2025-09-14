@@ -20,8 +20,8 @@ public class DotGiamGiaDetailResponse {
     private String loaiGiamGiaApDung;
     private BigDecimal giaTriGiamGia;
     private BigDecimal soTienGiamToiDa;
-    private Instant ngayBatDau;
-    private Instant ngayKetThuc;
+    private LocalDate ngayBatDau;
+    private LocalDate ngayKetThuc;
     private Boolean trangThai;
 
     private List<SanPhamDetailResponse> danhSachSanPham;
