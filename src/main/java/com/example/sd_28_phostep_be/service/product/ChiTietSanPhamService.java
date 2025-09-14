@@ -169,6 +169,24 @@ public class ChiTietSanPhamService {
         return chiTietSanPhamRepository.save(chiTietSanPham);
     }
 
+    /**
+     * Get active product details by product ID for sales counter
+     */
+    public List<ChiTietSanPham> getActiveByProductIdForSales(Integer productId) {
+        return chiTietSanPhamRepository.findActiveByProductIdForSales(productId);
+    }
+
+    /**
+     * Get active product details for sales counter with pagination and search
+     */
+    public Page<ChiTietSanPham> getActiveProductDetailsForSales(Pageable pageable, String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return chiTietSanPhamRepository.findActiveProductDetailsForSales(pageable);
+        } else {
+            return chiTietSanPhamRepository.findActiveProductDetailsForSalesWithKeyword(pageable, keyword.trim());
+        }
+    }
+
     public void updateDeletedStatusByProductId(Integer productId, Boolean deletedStatus) {
         chiTietSanPhamRepository.updateDeletedStatusByProductId(productId, deletedStatus);
     }

@@ -75,6 +75,57 @@ public interface ChiTietSanPhamRepository extends JpaRepository<ChiTietSanPham, 
                                            @Param("maxSellingPrice") Double maxSellingPrice,
                                            Pageable pageable);
     
+    /**
+     * Find active product details by product ID for sales counter
+     */
+    @Query("SELECT ctsp FROM ChiTietSanPham ctsp " +
+           "LEFT JOIN FETCH ctsp.idSanPham sp " +
+           "LEFT JOIN FETCH sp.idDanhMuc " +
+           "LEFT JOIN FETCH sp.idThuongHieu " +
+           "LEFT JOIN FETCH sp.idChatLieu " +
+           "LEFT JOIN FETCH sp.idDeGiay " +
+           "LEFT JOIN FETCH ctsp.idMauSac " +
+           "LEFT JOIN FETCH ctsp.idKichCo " +
+           "WHERE ctsp.idSanPham.id = :productId " +
+           "AND (ctsp.deleted = false OR ctsp.deleted IS NULL) " +
+           "AND (sp.deleted = false OR sp.deleted IS NULL) " +
+           "AND ctsp.soLuongTonKho > 0")
+    List<ChiTietSanPham> findActiveByProductIdForSales(@Param("productId") Integer productId);
+
+    /**
+     * Find active product details for sales counter with pagination
+     */
+    @Query("SELECT ctsp FROM ChiTietSanPham ctsp " +
+           "LEFT JOIN FETCH ctsp.idSanPham sp " +
+           "LEFT JOIN FETCH sp.idDanhMuc " +
+           "LEFT JOIN FETCH sp.idThuongHieu " +
+           "LEFT JOIN FETCH sp.idChatLieu " +
+           "LEFT JOIN FETCH sp.idDeGiay " +
+           "LEFT JOIN FETCH ctsp.idMauSac " +
+           "LEFT JOIN FETCH ctsp.idKichCo " +
+           "WHERE (ctsp.deleted = false OR ctsp.deleted IS NULL) " +
+           "AND (sp.deleted = false OR sp.deleted IS NULL) " +
+           "AND ctsp.soLuongTonKho > 0")
+    Page<ChiTietSanPham> findActiveProductDetailsForSales(Pageable pageable);
+
+    /**
+     * Find active product details for sales counter with keyword search
+     */
+    @Query("SELECT ctsp FROM ChiTietSanPham ctsp " +
+           "LEFT JOIN FETCH ctsp.idSanPham sp " +
+           "LEFT JOIN FETCH sp.idDanhMuc " +
+           "LEFT JOIN FETCH sp.idThuongHieu " +
+           "LEFT JOIN FETCH sp.idChatLieu " +
+           "LEFT JOIN FETCH sp.idDeGiay " +
+           "LEFT JOIN FETCH ctsp.idMauSac " +
+           "LEFT JOIN FETCH ctsp.idKichCo " +
+           "WHERE (ctsp.deleted = false OR ctsp.deleted IS NULL) " +
+           "AND (sp.deleted = false OR sp.deleted IS NULL) " +
+           "AND ctsp.soLuongTonKho > 0 " +
+           "AND (LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+           "OR LOWER(ctsp.ma) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Page<ChiTietSanPham> findActiveProductDetailsForSalesWithKeyword(Pageable pageable, @Param("keyword") String keyword);
+
     @Modifying
     @Query("UPDATE ChiTietSanPham ctsp SET ctsp.deleted = :deletedStatus, ctsp.ngayCapNhat = CURRENT_TIMESTAMP WHERE ctsp.idSanPham.id = :productId")
     void updateDeletedStatusByProductId(@Param("productId") Integer productId, @Param("deletedStatus") Boolean deletedStatus);

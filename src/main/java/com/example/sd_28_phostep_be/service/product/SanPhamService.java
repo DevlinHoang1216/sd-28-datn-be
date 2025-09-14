@@ -177,6 +177,17 @@ public class SanPhamService {
         return String.format("SP%d", productId);
     }
 
+    /**
+     * Get active products for sales counter with pagination and search
+     */
+    public Page<SanPham> getActiveProductsForSales(Pageable pageable, String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return sanPhamRepository.findActiveProductsForSales(pageable);
+        } else {
+            return sanPhamRepository.findActiveProductsForSalesWithKeyword(pageable, keyword.trim());
+        }
+    }
+
     @Transactional
     public SanPham toggleProductStatus(Integer id) {
         Optional<SanPham> optionalSanPham = sanPhamRepository.findById(id);
