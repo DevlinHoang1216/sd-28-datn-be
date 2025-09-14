@@ -1,5 +1,7 @@
 package com.example.sd_28_phostep_be.controller.sales;
 
+import com.example.sd_28_phostep_be.dto.account.request.KhachHang.KhachHangQuickCreateRequest;
+import com.example.sd_28_phostep_be.dto.account.response.KhachHang.KhachHangDTOResponse;
 import com.example.sd_28_phostep_be.modal.account.KhachHang;
 import com.example.sd_28_phostep_be.modal.product.ChiTietSanPham;
 import com.example.sd_28_phostep_be.modal.product.SanPham;
@@ -10,13 +12,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/ban-hang")
+@RequestMapping("/api/ban-hang")
 @CrossOrigin(origins = "*")
 public class BanHangController {
 
@@ -64,7 +67,43 @@ public class BanHangController {
             @RequestParam(defaultValue = "") String keyword) {
         
         Pageable pageable = PageRequest.of(page, size);
-        Page<ChiTietSanPham> activeDetails = chiTietSanPhamService.getActiveProductDetailsForSales(pageable, keyword);
+        Page<ChiTietSanPham> activeDetails;
+        
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            activeDetails = chiTietSanPhamService.getActiveProductDetailsForSalesWithKeyword(pageable, keyword.trim());
+        } else {
+            activeDetails = chiTietSanPhamService.getActiveProductDetailsForSales(pageable);
+        }
+        
         return ResponseEntity.ok(activeDetails);
+    }
+
+    /**
+     * Get active customers for sales counter with phone numbers from account table
+     */
+    @GetMapping("/khach-hang")
+    public ResponseEntity<Page<KhachHangDTOResponse>> getActiveCustomers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir,
+            @RequestParam(defaultValue = "") String keyword) {
+        
+        Sort sort = sortDir.equalsIgnoreCase("desc") ? 
+            Sort.by(sortBy).descending() : 
+            Sort.by(sortBy).ascending();
+            
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<KhachHangDTOResponse> activeCustomers = khachHangServices.getActiveCustomersForSales(pageable, keyword.trim());
+        return ResponseEntity.ok(activeCustomers);
+    }
+
+    /**
+     * Quick create customer with only name and phone number for sales counter
+     */
+    @PostMapping("/khach-hang/quick-create")
+    public ResponseEntity<KhachHang> quickCreateCustomer(@RequestBody KhachHangQuickCreateRequest request) {
+        KhachHang newCustomer = khachHangServices.quickCreateCustomer(request);
+        return ResponseEntity.ok(newCustomer);
     }
 }
