@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 
 @Data
@@ -21,8 +22,8 @@ public class PhieuGiamGiaDetailResponse {
     private Double soTienGiamToiDa;
     private Double hoaDonToiThieu;
     private Integer soLuongDung;
-    private Instant ngayBatDau;
-    private Instant ngayKetThuc;
+    private LocalDate ngayBatDau;
+    private LocalDate ngayKetThuc;
     private Boolean trangThai;
     private Boolean riengTu;
     private String moTa;

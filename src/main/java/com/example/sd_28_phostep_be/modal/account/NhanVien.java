@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Nationalized;
 
+import java.sql.Date;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 
@@ -34,7 +35,7 @@ public class NhanVien {
     private String tenNhanVien;
 
     @Column(name = "ngay_sinh")
-    private Instant ngaySinh;
+    private Date ngaySinh;
 
     @Nationalized
     @Column(name = "anh_nhan_vien")
@@ -79,4 +80,6 @@ public class NhanVien {
     @Column(name = "updated_by")
     private Integer updatedBy;
 
+    @Column(name = "gioi_tinh")
+    private Boolean gioiTinh;
 }

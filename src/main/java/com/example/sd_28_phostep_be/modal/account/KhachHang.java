@@ -34,7 +34,7 @@ public class KhachHang {
     @Column(name = "ten")
     private String ten;
 
-    @Column(name = "gioi_tinh", columnDefinition = "tinyint")
+    @Column(name = "gioi_tinh")
     private Short gioiTinh;
 
     @Column(name = "ngay_sinh")
