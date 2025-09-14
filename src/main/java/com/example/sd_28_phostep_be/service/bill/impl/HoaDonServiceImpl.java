@@ -4,9 +4,11 @@ import com.example.sd_28_phostep_be.common.bill.HoaDonDetailMapper;
 import com.example.sd_28_phostep_be.common.bill.HoaDonMapper;
 import com.example.sd_28_phostep_be.dto.bill.response.HoaDonDTOResponse;
 import com.example.sd_28_phostep_be.dto.bill.response.HoaDonDetailResponse;
+import com.example.sd_28_phostep_be.dto.bill.request.UpdateCustomerRequest;
 import com.example.sd_28_phostep_be.exception.ResourceNotFoundException;
 import com.example.sd_28_phostep_be.modal.bill.HoaDon;
 import com.example.sd_28_phostep_be.modal.bill.LichSuHoaDon;
+import com.example.sd_28_phostep_be.repository.account.KhachHang.KhachHangRepository;
 import com.example.sd_28_phostep_be.repository.account.NhanVien.NhanVienRepository;
 import com.example.sd_28_phostep_be.repository.bill.HoaDonRepository;
 import com.example.sd_28_phostep_be.repository.bill.LichSuHoaDonRepository;
@@ -16,8 +18,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +44,9 @@ public class HoaDonServiceImpl implements HoaDonService {
 
     @Autowired
     private LichSuHoaDonRepository lichSuHoaDonRepository;
+
+    @Autowired
+    private KhachHangRepository khachHangRepository;
 
     @Override
     public Page<HoaDonDTOResponse> getHoaDonAndFilters(String keyword, Long minAmount, Long maxAmount, Timestamp startDate, Timestamp endDate, Short trangThai, String loaiDon, Pageable pageable) {
@@ -182,6 +190,109 @@ public class HoaDonServiceImpl implements HoaDonService {
             case 6: return "Đã hủy";
             default: return "N/A";
         }
+    }
+
+    // Sales counter specific methods implementation
+    @Override
+    public List<HoaDon> getPendingInvoicesForSales() {
+        return hoaDonRepository.findPendingInvoicesForSales();
+    }
+
+    @Override
+    public HoaDon createPendingInvoice() {
+        HoaDon newInvoice = new HoaDon();
+        
+        // Don't set ma - let database auto-generate it
+        // newInvoice.setMa() is not called - database will handle auto-increment
+        
+        // Set default values for pending invoice
+        newInvoice.setTrangThai((short) 0); // Status = 0 (pending for sales counter)
+        newInvoice.setDeleted(true); // Set deleted = 1 for pending invoices
+        newInvoice.setCreatedAt(Instant.now());
+        newInvoice.setNgayTao(Date.valueOf(LocalDate.now()));
+        
+        // Set default amounts
+        newInvoice.setTienSanPham(BigDecimal.ZERO);
+        newInvoice.setPhiVanChuyen(BigDecimal.ZERO);
+        newInvoice.setTongTien(BigDecimal.ZERO);
+        newInvoice.setTongTienSauGiam(BigDecimal.ZERO);
+        
+        // Set default customer info (guest customer)
+        newInvoice.setTenKhachHang("Khách lẻ");
+        newInvoice.setDiaChiKhachHang("");
+        newInvoice.setSoDienThoaiKhachHang("");
+        newInvoice.setLoaiDon("Tại Quầy");
+        
+        // Set default customer ID = 1 (required by database)
+        // Get the default customer entity with ID = 1
+        newInvoice.setIdKhachHang(khachHangRepository.findById(1)
+                .orElseThrow(() -> new RuntimeException("Default customer with ID 1 not found")));
+        
+        // Set default employee ID = 1 (required by database)
+        // Get the default employee entity with ID = 1
+        newInvoice.setIdNhanVien(nhanVienRepository.findById(1)
+                .orElseThrow(() -> new RuntimeException("Default employee with ID 1 not found")));
+        
+        // Save the invoice first
+        HoaDon savedInvoice = hoaDonRepository.save(newInvoice);
+        
+        // Force flush to ensure database operations are completed
+        hoaDonRepository.flush();
+        
+        // Reload from database to get the auto-generated ma field
+        HoaDon reloadedInvoice = hoaDonRepository.findById(savedInvoice.getId())
+                .orElseThrow(() -> new RuntimeException("Failed to reload saved invoice"));
+        
+        // If ma is still null, generate it manually based on ID
+        if (reloadedInvoice.getMa() == null || reloadedInvoice.getMa().isEmpty()) {
+            String generatedMa = "HD" + String.format("%06d", reloadedInvoice.getId());
+            reloadedInvoice.setMa(generatedMa);
+            reloadedInvoice = hoaDonRepository.save(reloadedInvoice);
+        }
+        
+        return reloadedInvoice;
+    }
+
+    @Override
+    public HoaDon updatePendingInvoiceCustomer(Integer id, UpdateCustomerRequest request) {
+        HoaDon invoice = hoaDonRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Hóa đơn không tồn tại"));
+        
+        // Update customer information
+        if (request.getKhachHangId() != null) {
+            invoice.setIdKhachHang(khachHangRepository.findById(request.getKhachHangId())
+                    .orElseThrow(() -> new RuntimeException("Khách hàng không tồn tại")));
+        }
+        
+        if (request.getTenKhachHang() != null) {
+            invoice.setTenKhachHang(request.getTenKhachHang());
+        }
+        
+        if (request.getSoDienThoaiKhachHang() != null) {
+            invoice.setSoDienThoaiKhachHang(request.getSoDienThoaiKhachHang());
+        }
+        
+        if (request.getDiaChiKhachHang() != null) {
+            invoice.setDiaChiKhachHang(request.getDiaChiKhachHang());
+        }
+        
+        if (request.getEmail() != null) {
+            invoice.setEmail(request.getEmail());
+        }
+        
+        // Update timestamp
+        invoice.setUpdatedAt(Instant.now());
+        
+        return hoaDonRepository.save(invoice);
+    }
+
+    @Override
+    public void deletePendingInvoice(Integer id) {
+        HoaDon invoice = hoaDonRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Hóa đơn không tồn tại"));
+        
+        // Hard delete - remove from database completely
+        hoaDonRepository.delete(invoice);
     }
 
 
