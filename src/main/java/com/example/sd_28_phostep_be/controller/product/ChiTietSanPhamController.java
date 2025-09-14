@@ -11,6 +11,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Optional;
 
 
@@ -92,6 +93,33 @@ public class ChiTietSanPhamController {
             return ResponseEntity.ok(updatedChiTietSanPham);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
+        }
+    }
+    
+    // Sales counter endpoints
+    @GetMapping("/sales/product/{productId}")
+    public List<ChiTietSanPham> getActiveByProductIdForSales(@PathVariable Integer productId) {
+        return chiTietSanPhamService.getActiveByProductIdForSales(productId);
+    }
+    
+    @GetMapping("/sales")
+    public Page<ChiTietSanPham> getActiveProductDetailsForSales(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir,
+            @RequestParam(required = false) String keyword) {
+        
+        Sort sort = sortDir.equalsIgnoreCase("desc") ? 
+            Sort.by(sortBy).descending() : 
+            Sort.by(sortBy).ascending();
+            
+        Pageable pageable = PageRequest.of(page, size, sort);
+        
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            return chiTietSanPhamService.getActiveProductDetailsForSalesWithKeyword(pageable, keyword.trim());
+        } else {
+            return chiTietSanPhamService.getActiveProductDetailsForSales(pageable);
         }
     }
 }

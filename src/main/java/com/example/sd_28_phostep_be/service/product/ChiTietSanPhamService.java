@@ -177,14 +177,17 @@ public class ChiTietSanPhamService {
     }
 
     /**
+     * Get active product details for sales counter with pagination
+     */
+    public Page<ChiTietSanPham> getActiveProductDetailsForSales(Pageable pageable) {
+        return chiTietSanPhamRepository.findActiveProductDetailsForSales(pageable);
+    }
+
+    /**
      * Get active product details for sales counter with pagination and search
      */
-    public Page<ChiTietSanPham> getActiveProductDetailsForSales(Pageable pageable, String keyword) {
-        if (keyword == null || keyword.trim().isEmpty()) {
-            return chiTietSanPhamRepository.findActiveProductDetailsForSales(pageable);
-        } else {
-            return chiTietSanPhamRepository.findActiveProductDetailsForSalesWithKeyword(pageable, keyword.trim());
-        }
+    public Page<ChiTietSanPham> getActiveProductDetailsForSalesWithKeyword(Pageable pageable, String keyword) {
+        return chiTietSanPhamRepository.findActiveProductDetailsForSalesWithKeyword(pageable, keyword);
     }
 
     public void updateDeletedStatusByProductId(Integer productId, Boolean deletedStatus) {

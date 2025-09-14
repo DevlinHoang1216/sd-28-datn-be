@@ -48,4 +48,30 @@ public interface KhachHangRepository extends JpaRepository<KhachHang, Integer> {
             @Param("gioiTinh") Short gioiTinh,
             @Param("trangThai") Boolean trangThai,
             Pageable pageable);
+    
+    /**
+     * Get active customers for sales counter with phone numbers from account table
+     */
+    @Query("""
+            SELECT new com.example.sd_28_phostep_be.dto.account.response.KhachHang.KhachHangDTOResponse(
+            kh.id,
+            kh.ma,
+            kh.ten,
+            kh.taiKhoan.soDienThoai,
+            kh.gioiTinh,
+            kh.ngaySinh,
+            kh.createdAt,
+            kh.updatedAt,
+            kh.taiKhoan.deleted
+            ) 
+            FROM KhachHang kh
+            JOIN kh.taiKhoan tk
+            WHERE (kh.deleted = true OR kh.deleted IS NULL)
+            AND (tk.deleted = true OR tk.deleted IS NULL)
+            AND (:keyword IS NULL OR :keyword = '' OR
+                 LOWER(kh.ten) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+                 LOWER(kh.ma) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+                 LOWER(tk.soDienThoai) LIKE LOWER(CONCAT('%', :keyword, '%')))
+            """)
+    Page<KhachHangDTOResponse> findActiveCustomersForSales(Pageable pageable, @Param("keyword") String keyword);
 }
