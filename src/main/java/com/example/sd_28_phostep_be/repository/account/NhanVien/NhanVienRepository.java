@@ -24,7 +24,7 @@ public interface NhanVienRepository extends JpaRepository<NhanVien, Integer> {
             nv.idTaiKhoan.soDienThoai,
             nv.cccd,
             nv.diaChiCuThe,
-            nv.idTaiKhoan.deleted
+            nv.deleted
             ) 
             FROM NhanVien nv
             WHERE (
@@ -37,7 +37,7 @@ public interface NhanVienRepository extends JpaRepository<NhanVien, Integer> {
             OR (:keywordAsDate IS NOT NULL AND nv.ngaySinh = :keywordAsDate)
             )
             AND (:gioiTinh IS NULL OR nv.gioiTinh = :gioiTinh)
-            AND (:trangThai IS NULL OR nv.idTaiKhoan.deleted = :trangThai)
+            AND (:trangThai IS NULL OR nv.deleted = :trangThai)
             """)
     Page<NhanVienDTOResponse> getAllNV(
             @Param("keyword") String keyWord,

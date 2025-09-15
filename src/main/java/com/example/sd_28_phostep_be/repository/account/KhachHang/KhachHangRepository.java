@@ -28,7 +28,7 @@ public interface KhachHangRepository extends JpaRepository<KhachHang, Integer> {
             kh.ngaySinh,
             kh.createdAt,
             kh.updatedAt,
-            kh.taiKhoan.deleted
+            kh.deleted
             ) 
             FROM KhachHang kh
             WHERE (
@@ -40,7 +40,7 @@ public interface KhachHangRepository extends JpaRepository<KhachHang, Integer> {
             OR (:keywordAsDate IS NOT NULL AND kh.ngaySinh = :keywordAsDate)
             )
             AND (:gioiTinh IS NULL OR kh.gioiTinh = :gioiTinh)
-            AND (:trangThai IS NULL OR kh.taiKhoan.deleted = :trangThai)
+            AND (:trangThai IS NULL OR kh.deleted = :trangThai)
             """)
     Page<KhachHangDTOResponse> getAllKH(
             @Param("keyword") String keyWord,

@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.sql.Date;
 import java.time.Instant;
 
 @Getter
@@ -15,7 +16,7 @@ public class KhachHangCreateRequest {
     private String ten;
     private String soDienThoai;
     private Short gioiTinh;
-    private Instant ngaySinh;
+    private Date ngaySinh;
     private String cccd;
     private String email;
     private String matKhau;

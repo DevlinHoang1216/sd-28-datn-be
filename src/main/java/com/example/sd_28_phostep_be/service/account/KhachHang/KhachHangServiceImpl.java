@@ -18,6 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Date;
 import java.time.Instant;
 import java.util.List;
 
@@ -105,7 +106,7 @@ public class KhachHangServiceImpl implements KhachHangService {
                 .gioiTinh(request.getGioiTinh())
                 .ngaySinh(request.getNgaySinh())
                 .cccd(request.getCccd())
-                .deleted(false)
+                .deleted(true)
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
                 .build();
@@ -202,9 +203,8 @@ public class KhachHangServiceImpl implements KhachHangService {
             if (request.getEmail() != null) {
                 taiKhoan.setEmail(request.getEmail());
             }
-            if (request.getDeleted() != null) {
-                taiKhoan.setDeleted(request.getDeleted());
-            }
+            // Do not update deleted status during regular updates
+            // Only update deleted field through specific status change endpoints
             taiKhoanRepository.save(taiKhoan);
         }
         
@@ -256,15 +256,9 @@ public class KhachHangServiceImpl implements KhachHangService {
         KhachHang khachHang = khachHangRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy khách hàng với ID: " + id));
         
+        // Only set deleted on KhachHang table, not TaiKhoan
         khachHang.setDeleted(false);
         khachHang.setUpdatedAt(Instant.now());
-        
-        // Also soft delete the account
-        TaiKhoan taiKhoan = khachHang.getTaiKhoan();
-        if (taiKhoan != null) {
-            taiKhoan.setDeleted(false);
-            taiKhoanRepository.save(taiKhoan);
-        }
         
         khachHangRepository.save(khachHang);
     }
@@ -274,15 +268,9 @@ public class KhachHangServiceImpl implements KhachHangService {
         KhachHang khachHang = khachHangRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy khách hàng với ID: " + id));
         
+        // Only set deleted on KhachHang table, not TaiKhoan
         khachHang.setDeleted(true);
         khachHang.setUpdatedAt(Instant.now());
-        
-        // Also restore the account
-        TaiKhoan taiKhoan = khachHang.getTaiKhoan();
-        if (taiKhoan != null) {
-            taiKhoan.setDeleted(true);
-            taiKhoanRepository.save(taiKhoan);
-        }
         
         khachHangRepository.save(khachHang);
     }
@@ -336,7 +324,7 @@ public class KhachHangServiceImpl implements KhachHangService {
         return "DC" + System.currentTimeMillis();
     }
 
-    private String generateTenDangNhap(String ten, Instant ngaySinh) {
+    private String generateTenDangNhap(String ten, Date ngaySinh) {
         if (ten == null || ngaySinh == null) {
             return "user" + System.currentTimeMillis();
         }
