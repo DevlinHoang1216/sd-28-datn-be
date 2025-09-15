@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/dot-giam-gia")
@@ -40,5 +41,11 @@ public class DotGiamGiaController {
     @PutMapping("/update/{id}")
     public ResponseEntity<DotGiamGia> update(@PathVariable Integer id, @RequestBody DotGiamGiaDTO dto) {
         return ResponseEntity.ok(dotGiamGiaServices.updateDotGiamGia(id, dto));
+    }
+
+    @PutMapping("/{id}/status")
+    public ResponseEntity<DotGiamGia> toggleStatus(@PathVariable Integer id, @RequestBody Map<String, Boolean> request) {
+        Boolean newStatus = request.get("trangThai");
+        return ResponseEntity.ok(dotGiamGiaServices.toggleStatus(id, newStatus));
     }
 }

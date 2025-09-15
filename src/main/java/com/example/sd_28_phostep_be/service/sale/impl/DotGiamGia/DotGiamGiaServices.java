@@ -191,6 +191,13 @@ public class DotGiamGiaServices {
         return savedDot;
     }
 
-
+    @Transactional
+    public DotGiamGia toggleStatus(Integer id, Boolean newStatus) {
+        DotGiamGia dot = dotGiamGiaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đợt giảm giá"));
+        
+        dot.setTrangThai(newStatus);
+        return dotGiamGiaRepository.save(dot);
+    }
 
 }
