@@ -56,7 +56,7 @@ public class NhanVienServiceImpl implements NhanVienService {
                 .soDienThoai(request.getSoDienThoai())
                 .matKhau(request.getMatKhau()) // Should be encoded in real application
                 .idQuyenHan(quyenHan)
-                .deleted(true)
+                .deleted(false)
                 .build();
         
         taiKhoan = taiKhoanRepository.save(taiKhoan);
@@ -132,9 +132,8 @@ public class NhanVienServiceImpl implements NhanVienService {
         if (request.getSoDienThoai() != null) {
             taiKhoan.setSoDienThoai(request.getSoDienThoai());
         }
-        if (request.getDeleted() != null) {
-            taiKhoan.setDeleted(request.getDeleted());
-        }
+        // Do not update deleted status during regular updates
+        // Only update deleted field through specific status change endpoints
         
         taiKhoanRepository.save(taiKhoan);
         nhanVien = nhanVienRepository.save(nhanVien);
@@ -151,10 +150,6 @@ public class NhanVienServiceImpl implements NhanVienService {
         nhanVien.setDeleted(false);
         nhanVien.setUpdatedAt(OffsetDateTime.now());
         
-        TaiKhoan taiKhoan = nhanVien.getIdTaiKhoan();
-        taiKhoan.setDeleted(false);
-        
-        taiKhoanRepository.save(taiKhoan);
         nhanVienRepository.save(nhanVien);
     }
 
@@ -166,11 +161,7 @@ public class NhanVienServiceImpl implements NhanVienService {
         // Restore by setting deleted = true for both NhanVien and TaiKhoan (active)
         nhanVien.setDeleted(true);
         nhanVien.setUpdatedAt(OffsetDateTime.now());
-        
-        TaiKhoan taiKhoan = nhanVien.getIdTaiKhoan();
-        taiKhoan.setDeleted(true);
-        
-        taiKhoanRepository.save(taiKhoan);
+
         nhanVienRepository.save(nhanVien);
     }
 

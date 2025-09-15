@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.sql.Date;
 import java.time.Instant;
 @Getter
 @Setter
@@ -16,7 +17,7 @@ public class KhachHangDTOResponse {
     private String ten;
     private String soDienThoai;
     private Short gioiTinh;
-    private Instant ngaySinh;
+    private Date ngaySinh;
     private Instant createdAt;
     private Instant updatedAt;
     private Boolean deleted;

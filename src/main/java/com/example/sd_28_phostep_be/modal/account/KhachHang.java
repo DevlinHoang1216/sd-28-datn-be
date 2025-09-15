@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Nationalized;
 
+import java.sql.Date;
 import java.time.Instant;
 
 @Getter
@@ -38,7 +39,7 @@ public class KhachHang {
     private Short gioiTinh;
 
     @Column(name = "ngay_sinh")
-    private Instant ngaySinh;
+    private Date ngaySinh;
 
     @Column(name = "deleted")
     private Boolean deleted;
