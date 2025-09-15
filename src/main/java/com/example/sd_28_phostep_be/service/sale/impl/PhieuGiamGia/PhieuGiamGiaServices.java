@@ -14,6 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,6 +36,21 @@ public class PhieuGiamGiaServices {
         this.hoaDonRepository = hoaDonRepository;
     }
 
+    /**
+     * Convert date string (YYYY-MM-DD) to Instant at start of day
+     */
+    private Instant convertDateStringToInstant(String dateString) {
+        if (dateString == null || dateString.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            LocalDate localDate = LocalDate.parse(dateString);
+            return localDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid date format. Expected YYYY-MM-DD, got: " + dateString);
+        }
+    }
+
     public List<PhieuGiamGia> getall() {
         Instant now = Instant.now();
         List<PhieuGiamGia> list = phieuGiamGiaRepository.findAll(Sort.by(Sort.Direction.DESC, "id"));
@@ -52,23 +68,27 @@ public class PhieuGiamGiaServices {
 
     public PhieuGiamGia add(PhieuGiamGiaDTO dto) {
         Instant now = Instant.now();
+        Instant todayStart = now.atZone(ZoneId.systemDefault()).toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant();
+        
+        // Convert date strings to Instant
+        Instant ngayBatDauInstant = convertDateStringToInstant(dto.getNgayBatDau());
+        Instant ngayKetThucInstant = convertDateStringToInstant(dto.getNgayKetThuc());
 
-        // validate ngày
-        if (dto.getNgayBatDau() != null && dto.getNgayBatDau().isBefore(now)) {
+        // validate ngày - allow today's date
+        if (ngayBatDauInstant != null && ngayBatDauInstant.isBefore(todayStart)) {
             throw new IllegalArgumentException("Ngày bắt đầu không được nhỏ hơn ngày hiện tại");
         }
 
         // 1️⃣ Tạo phiếu giảm giá chung
         PhieuGiamGia pgg = PhieuGiamGia.builder()
-                .ma(dto.getMa())
                 .tenPhieuGiamGia(dto.getTenPhieuGiamGia())
                 .loaiPhieuGiamGia(dto.getLoaiPhieuGiamGia())
                 .phanTramGiamGia(dto.getPhanTramGiamGia())
                 .soTienGiamToiDa(dto.getSoTienGiamToiDa())
                 .hoaDonToiThieu(dto.getHoaDonToiThieu())
                 .soLuongDung(dto.getSoLuongDung())
-                .ngayBatDau(dto.getNgayBatDau())
-                .ngayKetThuc(dto.getNgayKetThuc())
+                .ngayBatDau(ngayBatDauInstant)
+                .ngayKetThuc(ngayKetThucInstant)
                 .riengTu(dto.getRiengTu())
                 .moTa(dto.getMoTa())
                 .deleted(false)
@@ -86,7 +106,7 @@ public class PhieuGiamGiaServices {
                 PhieuGiamGiaCaNhan caNhan = PhieuGiamGiaCaNhan.builder()
                         .idPhieuGiamGia(saved)
                         .idKhachHang(khachHang)
-                        .ma(saved.getMa() + "-" + khachHang.getMa()) // tạo mã riêng VD: PGG01-KH001
+                        .ma("PGG-" + saved.getId() + "-KH" + khachHang.getId()) // tạo mã riêng VD: PGG-1-KH001
                         .ngayNhan(now)
                         .ngayHetHan(saved.getNgayKetThuc())
                         .trangThai(true)
@@ -110,25 +130,29 @@ public class PhieuGiamGiaServices {
     public PhieuGiamGia update(Long id, PhieuGiamGiaDTO dto) {
         PhieuGiamGia existingPgg = getById(id);
         Instant now = Instant.now();
+        Instant todayStart = now.atZone(ZoneId.systemDefault()).toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant();
+        
+        // Convert date strings to Instant
+        Instant ngayBatDauInstant = convertDateStringToInstant(dto.getNgayBatDau());
+        Instant ngayKetThucInstant = convertDateStringToInstant(dto.getNgayKetThuc());
 
-        // Check ngày bắt đầu
-        if (dto.getNgayBatDau() != null && dto.getNgayBatDau().isBefore(now)) {
+        // Check ngày bắt đầu - allow today's date
+        if (ngayBatDauInstant != null && ngayBatDauInstant.isBefore(todayStart)) {
             throw new IllegalArgumentException("Ngày bắt đầu không được nhỏ hơn ngày hiện tại");
         }
 
         // Update fields
-        existingPgg.setMa(dto.getMa());
         existingPgg.setTenPhieuGiamGia(dto.getTenPhieuGiamGia());
         existingPgg.setLoaiPhieuGiamGia(dto.getLoaiPhieuGiamGia());
         existingPgg.setPhanTramGiamGia(dto.getPhanTramGiamGia());
         existingPgg.setSoTienGiamToiDa(dto.getSoTienGiamToiDa());
         existingPgg.setHoaDonToiThieu(dto.getHoaDonToiThieu());
         existingPgg.setSoLuongDung(dto.getSoLuongDung());
-        existingPgg.setNgayBatDau(dto.getNgayBatDau());
-        existingPgg.setNgayKetThuc(dto.getNgayKetThuc());
+        existingPgg.setNgayBatDau(ngayBatDauInstant);
+        existingPgg.setNgayKetThuc(ngayKetThucInstant);
         existingPgg.setRiengTu(dto.getRiengTu());
         existingPgg.setMoTa(dto.getMoTa());
-        existingPgg.setTrangThai(dto.getNgayKetThuc() != null && dto.getNgayKetThuc().isBefore(now) ? false : true);
+        existingPgg.setTrangThai(ngayKetThucInstant != null && ngayKetThucInstant.isBefore(now) ? false : true);
 
         PhieuGiamGia saved = phieuGiamGiaRepository.save(existingPgg);
 
@@ -221,7 +245,7 @@ public class PhieuGiamGiaServices {
             PhieuGiamGiaCaNhan newPggCn = PhieuGiamGiaCaNhan.builder()
                     .idPhieuGiamGia(pgg)
                     .idKhachHang(kh)
-                    .ma(pgg.getMa() + "-" + kh.getId())
+                    .ma("PGG-" + pgg.getId() + "-KH" + kh.getId())
                     .ngayNhan(Instant.now())
                     .ngayHetHan(pgg.getNgayKetThuc())
                     .trangThai(true)

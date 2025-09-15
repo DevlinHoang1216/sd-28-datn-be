@@ -122,4 +122,15 @@ public class ChiTietSanPhamController {
             return chiTietSanPhamService.getActiveProductDetailsForSales(pageable);
         }
     }
+    
+    // Sales counter endpoints with discount campaign prices
+    @GetMapping("/sales/with-discounts")
+    public List<ChiTietSanPhamService.ChiTietSanPhamWithDiscount> getActiveProductDetailsWithDiscountPrices() {
+        return chiTietSanPhamService.getActiveProductDetailsWithDiscountPrices();
+    }
+    
+    @GetMapping("/sales/with-discounts/product/{productId}")
+    public List<ChiTietSanPham> getActiveByProductIdWithDiscountPrices(@PathVariable Integer productId) {
+        return chiTietSanPhamService.getActiveByProductIdWithDiscountPrices(productId);
+    }
 }
