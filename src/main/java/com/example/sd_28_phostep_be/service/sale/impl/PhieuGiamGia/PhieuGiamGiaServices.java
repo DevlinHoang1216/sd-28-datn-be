@@ -3,9 +3,11 @@ package com.example.sd_28_phostep_be.service.sale.impl.PhieuGiamGia;
 import com.example.sd_28_phostep_be.dto.sale.request.PhieuGiamGia.PhieuGiamGiaDTO;
 import com.example.sd_28_phostep_be.dto.sale.response.PhieuGiamGia.PhieuGiamGiaDetailResponse;
 import com.example.sd_28_phostep_be.modal.account.KhachHang;
+import com.example.sd_28_phostep_be.modal.bill.HoaDon;
 import com.example.sd_28_phostep_be.modal.sale.PhieuGiamGia;
 import com.example.sd_28_phostep_be.modal.sale.PhieuGiamGiaCaNhan;
 import com.example.sd_28_phostep_be.repository.account.KhachHang.KhachHangRepository;
+import com.example.sd_28_phostep_be.repository.bill.HoaDonRepository;
 import com.example.sd_28_phostep_be.repository.sale.PhieuGiamGia.PhieuGiamGiaCaNhanRepository;
 import com.example.sd_28_phostep_be.repository.sale.PhieuGiamGia.PhieuGiamGiaRepository;
 import org.springframework.data.domain.Sort;
@@ -24,11 +26,13 @@ public class PhieuGiamGiaServices {
     private final PhieuGiamGiaRepository phieuGiamGiaRepository;
     private final KhachHangRepository khachHangRepository;
     private final PhieuGiamGiaCaNhanRepository phieuGiamGiaCaNhanRepository;
+    private final HoaDonRepository hoaDonRepository;
 
-    public PhieuGiamGiaServices(PhieuGiamGiaRepository phieuGiamGiaRepository, KhachHangRepository khachHangRepository, PhieuGiamGiaCaNhanRepository phieuGiamGiaCaNhanRepository) {
+    public PhieuGiamGiaServices(PhieuGiamGiaRepository phieuGiamGiaRepository, KhachHangRepository khachHangRepository, PhieuGiamGiaCaNhanRepository phieuGiamGiaCaNhanRepository, HoaDonRepository hoaDonRepository) {
         this.phieuGiamGiaRepository = phieuGiamGiaRepository;
         this.khachHangRepository = khachHangRepository;
         this.phieuGiamGiaCaNhanRepository = phieuGiamGiaCaNhanRepository;
+        this.hoaDonRepository = hoaDonRepository;
     }
 
     public List<PhieuGiamGia> getall() {
@@ -225,5 +229,195 @@ public class PhieuGiamGiaServices {
                     .build();
             phieuGiamGiaCaNhanRepository.save(newPggCn);
         }
+    }
+
+    // Lấy tất cả phiếu giảm giá còn hoạt động (công khai và cá nhân cho khách hàng)
+    public List<PhieuGiamGia> getActiveVouchersForCustomer(Integer customerId) {
+        List<PhieuGiamGia> activeVouchers = new ArrayList<>();
+        
+        // 1. Lấy tất cả phiếu giảm giá công khai còn hoạt động
+        List<PhieuGiamGia> publicVouchers = phieuGiamGiaRepository.findAll().stream()
+                .filter(pgg -> pgg.getTrangThai() != null && pgg.getTrangThai()) // Trạng thái true
+                .filter(pgg -> pgg.getDeleted() == null || !pgg.getDeleted()) // Deleted false
+                .filter(pgg -> pgg.getRiengTu() == null || !pgg.getRiengTu()) // Phiếu công khai
+                .collect(Collectors.toList());
+        
+        activeVouchers.addAll(publicVouchers);
+        
+        // 2. Nếu có customerId, lấy thêm phiếu giảm giá cá nhân
+        if (customerId != null) {
+            KhachHang khachHang = khachHangRepository.findById(customerId).orElse(null);
+            if (khachHang != null) {
+                List<PhieuGiamGiaCaNhan> personalVouchers = phieuGiamGiaCaNhanRepository
+                        .findAllByIdKhachHang(khachHang);
+                
+                for (PhieuGiamGiaCaNhan pggCaNhan : personalVouchers) {
+                    PhieuGiamGia pgg = pggCaNhan.getIdPhieuGiamGia();
+                    if (pgg.getTrangThai() != null && pgg.getTrangThai() && // Trạng thái true
+                        (pgg.getDeleted() == null || !pgg.getDeleted()) && // Deleted false
+                        !activeVouchers.contains(pgg)) {
+                        activeVouchers.add(pgg);
+                    }
+                }
+            }
+        }
+        
+        return activeVouchers;
+    }
+
+    // Lấy phiếu giảm giá công khai còn hoạt động
+    public List<PhieuGiamGia> getActivePublicVouchers() {
+        return phieuGiamGiaRepository.findAll().stream()
+                .filter(pgg -> pgg.getTrangThai() != null && pgg.getTrangThai()) // Trạng thái true
+                .filter(pgg -> pgg.getDeleted() == null || !pgg.getDeleted()) // Deleted false
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Áp dụng phiếu giảm giá cho hóa đơn
+     * - Lưu ID phiếu giảm giá vào hóa đơn
+     * - Trừ số lượng sử dụng của phiếu giảm giá
+     */
+    public HoaDon applyVoucherToInvoice(Integer invoiceId, Integer voucherId) {
+        // Tìm hóa đơn
+        HoaDon hoaDon = hoaDonRepository.findById(invoiceId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy hóa đơn với ID: " + invoiceId));
+
+        // Tìm phiếu giảm giá
+        PhieuGiamGia phieuGiamGia = phieuGiamGiaRepository.findById(voucherId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy phiếu giảm giá với ID: " + voucherId));
+
+        // Kiểm tra phiếu giảm giá có hợp lệ không
+        validateVoucherForApplication(phieuGiamGia);
+
+        // Kiểm tra số lượng sử dụng
+        if (phieuGiamGia.getSoLuongDung() != null && phieuGiamGia.getSoLuongDung() <= 0) {
+            throw new RuntimeException("Phiếu giảm giá đã hết lượt sử dụng");
+        }
+
+        // Nếu hóa đơn đã có phiếu giảm giá khác, khôi phục số lượng của phiếu cũ
+        if (hoaDon.getIdPhieuGiamGia() != null) {
+            restoreVoucherQuantity(hoaDon.getIdPhieuGiamGia().getId());
+        }
+
+        // Áp dụng phiếu giảm giá mới
+        hoaDon.setIdPhieuGiamGia(phieuGiamGia);
+
+        // Trừ số lượng sử dụng
+        if (phieuGiamGia.getSoLuongDung() != null) {
+            phieuGiamGia.setSoLuongDung(phieuGiamGia.getSoLuongDung() - 1);
+            phieuGiamGiaRepository.save(phieuGiamGia);
+        }
+
+        // Lưu hóa đơn
+        return hoaDonRepository.save(hoaDon);
+    }
+
+    /**
+     * Xóa phiếu giảm giá khỏi hóa đơn
+     * - Xóa ID phiếu giảm giá khỏi hóa đơn
+     * - Khôi phục số lượng sử dụng của phiếu giảm giá
+     */
+    public HoaDon removeVoucherFromInvoice(Integer invoiceId) {
+        // Tìm hóa đơn
+        HoaDon hoaDon = hoaDonRepository.findById(invoiceId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy hóa đơn với ID: " + invoiceId));
+
+        // Kiểm tra hóa đơn có phiếu giảm giá không
+        if (hoaDon.getIdPhieuGiamGia() == null) {
+            throw new RuntimeException("Hóa đơn không có phiếu giảm giá để xóa");
+        }
+
+        // Khôi phục số lượng sử dụng
+        restoreVoucherQuantity(hoaDon.getIdPhieuGiamGia().getId());
+
+        // Xóa phiếu giảm giá khỏi hóa đơn
+        hoaDon.setIdPhieuGiamGia(null);
+
+        // Lưu hóa đơn
+        return hoaDonRepository.save(hoaDon);
+    }
+
+    /**
+     * Khôi phục số lượng sử dụng của phiếu giảm giá
+     */
+    private void restoreVoucherQuantity(Integer voucherId) {
+        PhieuGiamGia phieuGiamGia = phieuGiamGiaRepository.findById(voucherId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy phiếu giảm giá với ID: " + voucherId));
+
+        if (phieuGiamGia.getSoLuongDung() != null) {
+            phieuGiamGia.setSoLuongDung(phieuGiamGia.getSoLuongDung() + 1);
+            phieuGiamGiaRepository.save(phieuGiamGia);
+        }
+    }
+
+    /**
+     * Kiểm tra tính hợp lệ của phiếu giảm giá khi áp dụng
+     */
+    private void validateVoucherForApplication(PhieuGiamGia phieuGiamGia) {
+        Instant now = Instant.now();
+
+        // Kiểm tra trạng thái
+        if (phieuGiamGia.getTrangThai() == null || !phieuGiamGia.getTrangThai()) {
+            throw new RuntimeException("Phiếu giảm giá không hoạt động");
+        }
+
+        // Kiểm tra xóa mềm
+        if (phieuGiamGia.getDeleted() != null && phieuGiamGia.getDeleted()) {
+            throw new RuntimeException("Phiếu giảm giá đã bị xóa");
+        }
+
+        // Kiểm tra ngày bắt đầu
+        if (phieuGiamGia.getNgayBatDau() != null && phieuGiamGia.getNgayBatDau().isAfter(now)) {
+            throw new RuntimeException("Phiếu giảm giá chưa có hiệu lực");
+        }
+
+        // Kiểm tra ngày kết thúc
+        if (phieuGiamGia.getNgayKetThuc() != null && phieuGiamGia.getNgayKetThuc().isBefore(now)) {
+            throw new RuntimeException("Phiếu giảm giá đã hết hạn");
+        }
+    }
+
+    /**
+     * Kiểm tra phiếu giảm giá có thể áp dụng cho khách hàng không
+     */
+    public boolean canApplyVoucherForCustomer(Integer voucherId, Integer customerId) {
+        PhieuGiamGia phieuGiamGia = phieuGiamGiaRepository.findById(voucherId)
+                .orElse(null);
+
+        if (phieuGiamGia == null) {
+            return false;
+        }
+
+        try {
+            validateVoucherForApplication(phieuGiamGia);
+        } catch (RuntimeException e) {
+            return false;
+        }
+
+        // Kiểm tra số lượng
+        if (phieuGiamGia.getSoLuongDung() != null && phieuGiamGia.getSoLuongDung() <= 0) {
+            return false;
+        }
+
+        // Nếu là phiếu riêng tư, kiểm tra khách hàng có quyền sử dụng không
+        if (Boolean.TRUE.equals(phieuGiamGia.getRiengTu())) {
+            if (customerId == null) {
+                return false;
+            }
+            
+            KhachHang khachHang = khachHangRepository.findById(customerId).orElse(null);
+            if (khachHang == null) {
+                return false;
+            }
+
+            // Kiểm tra khách hàng có trong danh sách phiếu cá nhân không
+            Optional<PhieuGiamGiaCaNhan> personalVoucher = phieuGiamGiaCaNhanRepository
+                    .findByIdPhieuGiamGiaAndIdKhachHang(phieuGiamGia, khachHang);
+            
+            return personalVoucher.isPresent();
+        }
+
+        return true; // Phiếu công khai
     }
 }

@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.time.Instant;
+import java.util.List;
 
 public interface KhachHangService {
     
@@ -18,6 +19,8 @@ public interface KhachHangService {
             Boolean trangThai,
             Pageable pageable
     );
+    
+    List<KhachHangDTOResponse> getAllActiveKhachHang();
     
     KhachHangDetailResponse getKhachHangById(Integer id);
     

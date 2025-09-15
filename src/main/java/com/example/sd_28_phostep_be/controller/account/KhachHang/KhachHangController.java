@@ -18,6 +18,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -27,6 +28,16 @@ import java.util.Map;
 public class KhachHangController {
 
     private final KhachHangService khachHangService;
+
+    @GetMapping
+    public ResponseEntity<List<KhachHangDTOResponse>> getAllActiveKhachHang() {
+        try {
+            List<KhachHangDTOResponse> customers = khachHangService.getAllActiveKhachHang();
+            return ResponseEntity.ok(customers);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
 
     @GetMapping("/home")
     public ResponseEntity<Map<String, Object>> getAllKhachHang(

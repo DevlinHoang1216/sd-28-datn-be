@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -38,6 +39,13 @@ public class KhachHangServiceImpl implements KhachHangService {
         // trangThai = false (inactive) -> deleted = false
         Boolean deletedStatus = trangThai;
         return khachHangRepository.getAllKH(keyword, keywordAsDate, gioiTinh, deletedStatus, pageable);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<KhachHangDTOResponse> getAllActiveKhachHang() {
+        // Get all active customers (deleted = true in this system's logic)
+        return khachHangRepository.findAllActiveKhachHang();
     }
 
     @Override
