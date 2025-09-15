@@ -3,7 +3,9 @@ package com.example.sd_28_phostep_be.service.auth;
 import com.example.sd_28_phostep_be.dto.auth.LoginRequest;
 import com.example.sd_28_phostep_be.dto.auth.LoginResponse;
 import com.example.sd_28_phostep_be.modal.account.TaiKhoan;
+import com.example.sd_28_phostep_be.modal.account.NhanVien;
 import com.example.sd_28_phostep_be.repository.account.TaiKhoanRepository;
+import com.example.sd_28_phostep_be.repository.account.NhanVien.NhanVienRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -15,9 +17,12 @@ public class AuthService {
     @Autowired
     private TaiKhoanRepository taiKhoanRepository;
     
+    @Autowired
+    private NhanVienRepository nhanVienRepository;
+    
     public LoginResponse login(LoginRequest loginRequest) {
         try {
-            // Tìm tài khoản theo tên đăng nhập (không quan tâm deleted status)
+            // Tìm tài khoản theo tên đăng nhập
             Optional<TaiKhoan> taiKhoanOpt = taiKhoanRepository.findByTenDangNhap(loginRequest.getTenDangNhap());
             
             if (!taiKhoanOpt.isPresent()) {
@@ -26,9 +31,37 @@ public class AuthService {
             
             TaiKhoan taiKhoan = taiKhoanOpt.get();
             
-            // Kiểm tra mật khẩu (so sánh trực tiếp, không mã hóa)
+            // Kiểm tra mật khẩu
             if (!taiKhoan.getMatKhau().equals(loginRequest.getMatKhau())) {
                 return new LoginResponse(false, "Mật khẩu không chính xác");
+            }
+            
+            // Kiểm tra quyền hạn
+            if (taiKhoan.getIdQuyenHan() == null) {
+                return new LoginResponse(false, "Tài khoản chưa được phân quyền");
+            }
+            
+            Integer capQuyenHan = taiKhoan.getIdQuyenHan().getCapQuyenHan();
+            
+            // Chỉ cho phép admin (1) và nhân viên (2) đăng nhập
+            if (capQuyenHan == null || (capQuyenHan != 1 && capQuyenHan != 2)) {
+                return new LoginResponse(false, "Tài khoản không có quyền truy cập hệ thống");
+            }
+            
+            // Nếu là nhân viên (capQuyenHan = 2), kiểm tra trạng thái nhân viên
+            if (capQuyenHan == 2) {
+                Optional<NhanVien> nhanVienOpt = nhanVienRepository.findByIdTaiKhoan(taiKhoan);
+                
+                if (!nhanVienOpt.isPresent()) {
+                    return new LoginResponse(false, "Không tìm thấy thông tin nhân viên");
+                }
+                
+                NhanVien nhanVien = nhanVienOpt.get();
+                
+                // Kiểm tra nhân viên có hoạt động không (deleted = true thì cho đăng nhập, deleted = false thì không cho)
+                if (nhanVien.getDeleted() == null || !nhanVien.getDeleted()) {
+                    return new LoginResponse(false, "Tài khoản nhân viên đã bị vô hiệu hóa");
+                }
             }
             
             // Đăng nhập thành công - set deleted = true (đang đăng nhập)
@@ -44,10 +77,8 @@ public class AuthService {
             response.setSoDienThoai(taiKhoan.getSoDienThoai());
             
             // Thông tin quyền hạn
-            if (taiKhoan.getIdQuyenHan() != null) {
-                response.setTenQuyen(taiKhoan.getIdQuyenHan().getMa());
-                response.setCapQuyenHan(taiKhoan.getIdQuyenHan().getCapQuyenHan());
-            }
+            response.setTenQuyen(taiKhoan.getIdQuyenHan().getMa());
+            response.setCapQuyenHan(capQuyenHan);
             
             response.setSuccess(true);
             response.setMessage("Đăng nhập thành công");
