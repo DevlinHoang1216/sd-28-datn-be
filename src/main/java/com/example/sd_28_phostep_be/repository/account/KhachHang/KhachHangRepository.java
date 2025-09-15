@@ -74,4 +74,27 @@ public interface KhachHangRepository extends JpaRepository<KhachHang, Integer> {
                  LOWER(tk.soDienThoai) LIKE LOWER(CONCAT('%', :keyword, '%')))
             """)
     Page<KhachHangDTOResponse> findActiveCustomersForSales(Pageable pageable, @Param("keyword") String keyword);
+
+    /**
+     * Get all active customers without pagination for dropdown lists
+     */
+    @Query("""
+            SELECT new com.example.sd_28_phostep_be.dto.account.response.KhachHang.KhachHangDTOResponse(
+            kh.id,
+            kh.ma,
+            kh.ten,
+            kh.taiKhoan.soDienThoai,
+            kh.gioiTinh,
+            kh.ngaySinh,
+            kh.createdAt,
+            kh.updatedAt,
+            kh.taiKhoan.deleted
+            ) 
+            FROM KhachHang kh
+            JOIN kh.taiKhoan tk
+            WHERE (kh.deleted = true OR kh.deleted IS NULL)
+            AND (tk.deleted = true OR tk.deleted IS NULL)
+            ORDER BY kh.ten ASC
+            """)
+    List<KhachHangDTOResponse> findAllActiveKhachHang();
 }

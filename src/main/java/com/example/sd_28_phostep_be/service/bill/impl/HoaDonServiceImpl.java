@@ -221,7 +221,7 @@ public class HoaDonServiceImpl implements HoaDonService {
         newInvoice.setTenKhachHang("Khách lẻ");
         newInvoice.setDiaChiKhachHang("");
         newInvoice.setSoDienThoaiKhachHang("");
-        newInvoice.setLoaiDon("Tại Quầy");
+        newInvoice.setLoaiDon("Tại quầy");
         
         // Set default customer ID = 1 (required by database)
         // Get the default customer entity with ID = 1

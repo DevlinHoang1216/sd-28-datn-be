@@ -21,6 +21,7 @@ public interface PhieuGiamGiaCaNhanRepository extends JpaRepository<PhieuGiamGia
 
     void deleteByIdPhieuGiamGia(PhieuGiamGia existingPgg);
 
+    List<PhieuGiamGiaCaNhan> findAllByIdKhachHang(KhachHang khachHang);
 
     @Transactional
     @Modifying
