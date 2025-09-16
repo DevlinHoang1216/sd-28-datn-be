@@ -34,12 +34,35 @@ public class StatisticsController {
             @RequestParam String endDate,
             @RequestParam(defaultValue = "daily") String period) {
         try {
-            java.time.LocalDate start = java.time.LocalDate.parse(startDate);
-            java.time.LocalDate end = java.time.LocalDate.parse(endDate);
+            // Validate period parameter
+            if (!period.matches("^(daily|weekly|monthly|yearly)$")) {
+                return ResponseEntity.badRequest().body("Invalid period. Must be one of: daily, weekly, monthly, yearly");
+            }
+            
+            // Parse dates with better error handling
+            java.time.LocalDate start;
+            java.time.LocalDate end;
+            
+            try {
+                start = java.time.LocalDate.parse(startDate);
+                end = java.time.LocalDate.parse(endDate);
+            } catch (java.time.format.DateTimeParseException e) {
+                return ResponseEntity.badRequest().body("Invalid date format. Expected format: YYYY-MM-DD");
+            }
+            
+            // Validate date range
+            if (start.isAfter(end)) {
+                return ResponseEntity.badRequest().body("Start date must be before or equal to end date");
+            }
+            
             var revenueData = statisticsService.getRevenueDataByPeriod(start, end, period);
             return ResponseEntity.ok(revenueData);
+            
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Invalid date format or period");
+            // Log the actual error for debugging
+            System.err.println("Error in getRevenueByPeriod: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("Error processing request: " + e.getMessage());
         }
     }
 }

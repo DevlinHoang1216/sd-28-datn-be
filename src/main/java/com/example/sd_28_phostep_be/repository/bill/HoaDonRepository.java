@@ -136,6 +136,16 @@ public interface HoaDonRepository extends JpaRepository<HoaDon, Integer> {
     List<Object[]> getMonthlyRevenue(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 
     @Query("""
+        SELECT DATEPART(YEAR, h.ngayTao), COALESCE(SUM(h.tongTienSauGiam), 0), COUNT(h)
+        FROM HoaDon h 
+        WHERE h.trangThai != 3 AND h.deleted = false 
+        AND CAST(h.ngayTao AS DATE) BETWEEN :startDate AND :endDate
+        GROUP BY DATEPART(YEAR, h.ngayTao)
+        ORDER BY DATEPART(YEAR, h.ngayTao)
+        """)
+    List<Object[]> getYearlyRevenue(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+
+    @Query("""
         SELECT dm.tenDanhMuc, COALESCE(SUM(h.tongTienSauGiam), 0), COUNT(DISTINCT h.id), COUNT(DISTINCT sp.id)
         FROM HoaDon h
         JOIN HoaDonChiTiet hct ON h.id = hct.idHoaDon.id
