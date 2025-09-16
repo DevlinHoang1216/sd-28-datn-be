@@ -524,4 +524,184 @@ public class HoaDonServiceImpl implements HoaDonService {
         }
     }
 
+    @Override
+    @Transactional
+    public void updateInvoiceStatusAfterPayment(Integer invoiceId, Integer status) {
+        try {
+            HoaDon hoaDon = hoaDonRepository.findById(invoiceId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy hóa đơn với ID: " + invoiceId));
+
+            if (status == 1) {
+                // Payment successful - process like cash payment
+                // 1. Update invoice status to completed
+                hoaDon.setTrangThai((short) 5); // Đã hoàn thành
+                hoaDon.setDeleted(false); // Mark as active invoice
+                hoaDon.setUpdatedAt(Instant.now());
+
+                // 2. Create invoice details (HoaDonChiTiet) from cart data
+                Optional<GioHang> gioHangOpt = gioHangRepository.findByHoaDonId(hoaDon.getId());
+                if (gioHangOpt.isPresent()) {
+                    List<GioHangChiTiet> gioHangChiTietList = gioHangChiTietRepository.findByGioHangId(gioHangOpt.get().getId());
+                    
+                    BigDecimal tongTien = BigDecimal.ZERO;
+                    
+                    for (GioHangChiTiet cartItem : gioHangChiTietList) {
+                        ChiTietSanPham chiTietSanPham = cartItem.getIdChiTietSp();
+                        
+                        // Create invoice detail using cart data
+                        HoaDonChiTiet hoaDonChiTiet = HoaDonChiTiet.builder()
+                                .idHoaDon(hoaDon)
+                                .idChiTietSp(chiTietSanPham)
+                                .gia(cartItem.getGia())
+                                .soLuong(cartItem.getSoLuong())
+                                .trangThai((short) 1)
+                                .build();
+
+                        hoaDonChiTietRepository.save(hoaDonChiTiet);
+                        
+                        // Calculate total
+                        tongTien = tongTien.add(cartItem.getGia().multiply(BigDecimal.valueOf(cartItem.getSoLuong())));
+                    }
+                    
+                    // Update invoice totals
+                    hoaDon.setTienSanPham(tongTien);
+                    hoaDon.setTongTien(tongTien);
+                    hoaDon.setTongTienSauGiam(tongTien);
+                    
+                    // 3. Create VNPay payment record
+                    PhuongThucThanhToan vnpayMethod = phuongThucThanhToanRepository
+                            .findByKieuThanhToan("VnPay")
+                            .orElseThrow(() -> new RuntimeException("Không tìm thấy phương thức thanh toán VnPay"));
+
+                    HinhThucThanhToan hinhThucThanhToan = HinhThucThanhToan.builder()
+                            .idHoaDon(hoaDon)
+                            .idPhuongThucThanhToan(vnpayMethod)
+                            .tienMat(BigDecimal.ZERO)
+                            .tienChuyenKhoan(tongTien)
+                            .deleted(false)
+                            .build();
+
+                    hinhThucThanhToanRepository.save(hinhThucThanhToan);
+                    
+                    // 4. Clean up cart data after successful payment
+                    gioHangChiTietRepository.deleteAll(gioHangChiTietList);
+                    gioHangRepository.delete(gioHangOpt.get());
+                    
+                } else {
+                    throw new RuntimeException("Không tìm thấy giỏ hàng cho hóa đơn này");
+                }
+            } else {
+                // Payment failed - update status to cancelled
+                hoaDon.setTrangThai((short) 4); // Đã hủy
+                hoaDon.setUpdatedAt(Instant.now());
+            }
+
+            hoaDonRepository.save(hoaDon);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Lỗi cập nhật trạng thái hóa đơn: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void updateInvoiceStatusAfterVNPayPayment(Integer invoiceId, Integer status, Long vnpayAmount) {
+        try {
+            HoaDon hoaDon = hoaDonRepository.findById(invoiceId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy hóa đơn với ID: " + invoiceId));
+
+            if (status == 1) {
+                // Payment successful - process like cash payment
+                // 1. Update invoice status to completed
+                hoaDon.setTrangThai((short) 5); // Đã hoàn thành
+                hoaDon.setDeleted(false); // Mark as active invoice
+                hoaDon.setUpdatedAt(Instant.now());
+
+                // 2. Create invoice details (HoaDonChiTiet) from cart data
+                Optional<GioHang> gioHangOpt = gioHangRepository.findByHoaDonId(hoaDon.getId());
+                if (gioHangOpt.isPresent()) {
+                    List<GioHangChiTiet> gioHangChiTietList = gioHangChiTietRepository.findByGioHangId(gioHangOpt.get().getId());
+                    
+                    for (GioHangChiTiet cartItem : gioHangChiTietList) {
+                        ChiTietSanPham chiTietSanPham = cartItem.getIdChiTietSp();
+                        
+                        // Create invoice detail using cart data
+                        HoaDonChiTiet hoaDonChiTiet = HoaDonChiTiet.builder()
+                                .idHoaDon(hoaDon)
+                                .idChiTietSp(chiTietSanPham)
+                                .gia(cartItem.getGia())
+                                .soLuong(cartItem.getSoLuong())
+                                .trangThai((short) 1)
+                                .build();
+
+                        hoaDonChiTietRepository.save(hoaDonChiTiet);
+                    }
+                    
+                    // Update invoice totals with VNPay amount
+                    BigDecimal vnpayAmountBD = BigDecimal.valueOf(vnpayAmount);
+                    hoaDon.setTienSanPham(vnpayAmountBD);
+                    hoaDon.setTongTien(vnpayAmountBD);
+                    hoaDon.setTongTienSauGiam(vnpayAmountBD);
+                    
+                    // 3. Create VNPay payment record with actual VNPay amount
+                    PhuongThucThanhToan vnpayMethod = phuongThucThanhToanRepository
+                            .findByKieuThanhToan("VnPay")
+                            .orElseThrow(() -> new RuntimeException("Không tìm thấy phương thức thanh toán VnPay"));
+
+                    HinhThucThanhToan hinhThucThanhToan = HinhThucThanhToan.builder()
+                            .idHoaDon(hoaDon)
+                            .idPhuongThucThanhToan(vnpayMethod)
+                            .tienMat(BigDecimal.ZERO)
+                            .tienChuyenKhoan(vnpayAmountBD) // Use actual VNPay amount
+                            .deleted(false)
+                            .build();
+
+                    hinhThucThanhToanRepository.save(hinhThucThanhToan);
+                    
+                    // 4. Clean up cart data after successful payment
+                    gioHangChiTietRepository.deleteAll(gioHangChiTietList);
+                    gioHangRepository.delete(gioHangOpt.get());
+                    
+                } else {
+                    throw new RuntimeException("Không tìm thấy giỏ hàng cho hóa đơn này");
+                }
+            } else {
+                // Payment failed - update status to cancelled
+                hoaDon.setTrangThai((short) 4); // Đã hủy
+                hoaDon.setUpdatedAt(Instant.now());
+            }
+
+            hoaDonRepository.save(hoaDon);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Lỗi cập nhật trạng thái hóa đơn VNPay: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void processCashPayment(Integer invoiceId, BigDecimal cashAmount) {
+        try {
+            HoaDon hoaDon = hoaDonRepository.findById(invoiceId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy hóa đơn với ID: " + invoiceId));
+
+            // Find cash payment method
+            PhuongThucThanhToan cashPaymentMethod = phuongThucThanhToanRepository.findByKieuThanhToan("Tiền mặt")
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy phương thức thanh toán tiền mặt"));
+
+            // Create cash payment record
+            HinhThucThanhToan cashPayment = new HinhThucThanhToan();
+            cashPayment.setIdHoaDon(hoaDon);
+            cashPayment.setIdPhuongThucThanhToan(cashPaymentMethod);
+            cashPayment.setTienMat(cashAmount);
+            cashPayment.setTienChuyenKhoan(BigDecimal.ZERO);
+            cashPayment.setDeleted(false);
+
+            hinhThucThanhToanRepository.save(cashPayment);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Lỗi xử lý thanh toán tiền mặt: " + e.getMessage(), e);
+        }
+    }
+
 }
