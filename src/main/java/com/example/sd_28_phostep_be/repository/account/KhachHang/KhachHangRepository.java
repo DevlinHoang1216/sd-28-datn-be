@@ -97,4 +97,8 @@ public interface KhachHangRepository extends JpaRepository<KhachHang, Integer> {
             ORDER BY kh.ten ASC
             """)
     List<KhachHangDTOResponse> findAllActiveKhachHang();
+
+    // Statistics query
+    @Query("SELECT COUNT(kh) FROM KhachHang kh WHERE kh.deleted = false OR kh.deleted IS NULL")
+    Long getTotalActiveCustomers();
 }

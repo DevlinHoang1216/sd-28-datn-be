@@ -40,5 +40,12 @@ public interface HoaDonService {
     
     // Payment processing method
     PaymentResponse processPayment(PaymentRequest paymentRequest);
+    
+    // VNPay specific methods
+    void updateInvoiceStatusAfterPayment(Integer invoiceId, Integer status);
+    
+    void updateInvoiceStatusAfterVNPayPayment(Integer invoiceId, Integer status, Long vnpayAmount);
+    
+    void processCashPayment(Integer invoiceId, java.math.BigDecimal cashAmount);
 
 }
