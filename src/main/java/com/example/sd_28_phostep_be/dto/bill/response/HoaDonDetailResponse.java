@@ -81,7 +81,7 @@ public class HoaDonDetailResponse {
         private String kichCo;
         private String chatLieu;
         private String duongDan;
-        private Integer soLuongTonKho;
+        private Integer soLuong; // Số lượng đã mua trong hóa đơn
         private String moTaChiTiet;
 
         public SanPhamChiTietInfo(Integer hoaDonChiTietId, Integer chiTietSanPhamId, Integer idSanPham, 

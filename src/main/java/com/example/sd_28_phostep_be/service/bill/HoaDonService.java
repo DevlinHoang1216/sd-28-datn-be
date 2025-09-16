@@ -3,6 +3,8 @@ package com.example.sd_28_phostep_be.service.bill;
 import com.example.sd_28_phostep_be.dto.bill.response.HoaDonDTOResponse;
 import com.example.sd_28_phostep_be.dto.bill.response.HoaDonDetailResponse;
 import com.example.sd_28_phostep_be.dto.bill.request.UpdateCustomerRequest;
+import com.example.sd_28_phostep_be.dto.sell.request.PaymentRequest;
+import com.example.sd_28_phostep_be.dto.sell.response.PaymentResponse;
 import com.example.sd_28_phostep_be.modal.bill.HoaDon;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -35,5 +37,8 @@ public interface HoaDonService {
     HoaDon updatePendingInvoiceCustomer(Integer id, UpdateCustomerRequest request);
     
     void deletePendingInvoice(Integer id);
+    
+    // Payment processing method
+    PaymentResponse processPayment(PaymentRequest paymentRequest);
 
 }

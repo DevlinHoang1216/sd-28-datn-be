@@ -3,6 +3,8 @@ package com.example.sd_28_phostep_be.controller.sales;
 import com.example.sd_28_phostep_be.dto.account.request.KhachHang.KhachHangQuickCreateRequest;
 import com.example.sd_28_phostep_be.dto.account.response.KhachHang.KhachHangDTOResponse;
 import com.example.sd_28_phostep_be.dto.bill.request.UpdateCustomerRequest;
+import com.example.sd_28_phostep_be.dto.sell.request.PaymentRequest;
+import com.example.sd_28_phostep_be.dto.sell.response.PaymentResponse;
 import com.example.sd_28_phostep_be.modal.account.KhachHang;
 import com.example.sd_28_phostep_be.modal.bill.HoaDon;
 import com.example.sd_28_phostep_be.modal.product.ChiTietSanPham;
@@ -149,5 +151,19 @@ public class BanHangController {
     public ResponseEntity<Void> deletePendingInvoice(@PathVariable Integer id) {
         hoaDonService.deletePendingInvoice(id);
         return ResponseEntity.ok().build();
+    }
+
+    /**
+     * Process payment for cash transactions
+     */
+    @PostMapping("/thanh-toan")
+    public ResponseEntity<PaymentResponse> processPayment(@RequestBody PaymentRequest paymentRequest) {
+        PaymentResponse response = hoaDonService.processPayment(paymentRequest);
+        
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.badRequest().body(response);
+        }
     }
 }

@@ -43,6 +43,10 @@ public class HoaDonChiTiet {
     @Column(name = "gia", nullable = false, precision = 18, scale = 2)
     private BigDecimal gia;
 
+    @NotNull
+    @Column(name = "so_luong", nullable = false)
+    private Integer soLuong;
+
     @ColumnDefault("1")
     @Column(name = "trang_thai", columnDefinition = "tinyint not null")
     private Short trangThai;
@@ -54,6 +58,7 @@ public class HoaDonChiTiet {
 
     @NotNull
     @Column(name = "deleted", nullable = false)
+    @Builder.Default
     private Boolean deleted = false;
 
 }
