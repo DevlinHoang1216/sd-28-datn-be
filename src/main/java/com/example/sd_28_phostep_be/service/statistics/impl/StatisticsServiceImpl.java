@@ -110,6 +110,8 @@ public class StatisticsServiceImpl implements StatisticsService {
                 return getWeeklyRevenueData(startDate, endDate);
             case "monthly":
                 return getMonthlyRevenueData(startDate, endDate);
+            case "yearly":
+                return getYearlyRevenueData(startDate, endDate);
             default:
                 return getDailyRevenueData(startDate, endDate);
         }
@@ -124,15 +126,25 @@ public class StatisticsServiceImpl implements StatisticsService {
         List<RevenueDataPoint> dataPoints = new ArrayList<>();
         
         for (Object[] row : weeklyRevenue) {
-            Integer year = (Integer) row[0];
-            Integer week = (Integer) row[1];
+            Integer year = ((Number) row[0]).intValue();
+            Integer week = ((Number) row[1]).intValue();
             BigDecimal revenue = (BigDecimal) row[2];
             Long orderCount = ((Number) row[3]).longValue();
             
-            String weekLabel = "Tuần " + week + "/" + year;
+            // Calculate the first day of the week for the given year and week
+            // Handle edge cases where week calculation might fail
+            LocalDate firstDayOfWeek;
+            try {
+                firstDayOfWeek = LocalDate.of(year, 1, 1)
+                    .with(java.time.temporal.WeekFields.ISO.weekOfYear(), week)
+                    .with(java.time.temporal.WeekFields.ISO.dayOfWeek(), 1);
+            } catch (Exception e) {
+                // Fallback: use the first day of the year if week calculation fails
+                firstDayOfWeek = LocalDate.of(year, 1, 1);
+            }
             
             dataPoints.add(RevenueDataPoint.builder()
-                .date(weekLabel)
+                .date(firstDayOfWeek.toString())
                 .revenue(revenue)
                 .orderCount(orderCount)
                 .build());
@@ -146,15 +158,50 @@ public class StatisticsServiceImpl implements StatisticsService {
         List<RevenueDataPoint> dataPoints = new ArrayList<>();
         
         for (Object[] row : monthlyRevenue) {
-            Integer year = (Integer) row[0];
-            Integer month = (Integer) row[1];
+            Integer year = ((Number) row[0]).intValue();
+            Integer month = ((Number) row[1]).intValue();
             BigDecimal revenue = (BigDecimal) row[2];
             Long orderCount = ((Number) row[3]).longValue();
             
-            String monthLabel = "Tháng " + month + "/" + year;
+            // Create the first day of the month with validation
+            LocalDate firstDayOfMonth;
+            try {
+                firstDayOfMonth = LocalDate.of(year, month, 1);
+            } catch (Exception e) {
+                // Fallback: use January 1st if month is invalid
+                firstDayOfMonth = LocalDate.of(year, 1, 1);
+            }
             
             dataPoints.add(RevenueDataPoint.builder()
-                .date(monthLabel)
+                .date(firstDayOfMonth.toString())
+                .revenue(revenue)
+                .orderCount(orderCount)
+                .build());
+        }
+        
+        return dataPoints;
+    }
+    
+    private List<RevenueDataPoint> getYearlyRevenueData(LocalDate startDate, LocalDate endDate) {
+        List<Object[]> yearlyRevenue = hoaDonRepository.getYearlyRevenue(startDate, endDate);
+        List<RevenueDataPoint> dataPoints = new ArrayList<>();
+        
+        for (Object[] row : yearlyRevenue) {
+            Integer year = ((Number) row[0]).intValue();
+            BigDecimal revenue = (BigDecimal) row[1];
+            Long orderCount = ((Number) row[2]).longValue();
+            
+            // Create January 1st of the year with validation
+            LocalDate firstDayOfYear;
+            try {
+                firstDayOfYear = LocalDate.of(year, 1, 1);
+            } catch (Exception e) {
+                // Fallback: use current year if year is invalid
+                firstDayOfYear = LocalDate.of(LocalDate.now().getYear(), 1, 1);
+            }
+            
+            dataPoints.add(RevenueDataPoint.builder()
+                .date(firstDayOfYear.toString())
                 .revenue(revenue)
                 .orderCount(orderCount)
                 .build());
