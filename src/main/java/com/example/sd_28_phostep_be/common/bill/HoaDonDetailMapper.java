@@ -26,7 +26,7 @@ public interface HoaDonDetailMapper {
     @Mapping(source = "idChiTietSp.idMauSac.tenMauSac", target = "mauSac")
     @Mapping(source = "idChiTietSp.idKichCo.tenKichCo", target = "kichCo")
     @Mapping(source = "idChiTietSp.idSanPham.idChatLieu.tenChatLieu", target = "chatLieu")
-    @Mapping(source = "idChiTietSp.soLuongTonKho", target = "soLuongTonKho")
+    @Mapping(source = "soLuong", target = "soLuong")
     @Mapping(source = "idChiTietSp.moTaChiTiet", target = "moTaChiTiet")
     @Mapping(source = "idChiTietSp.idAnhSanPham.urlAnh", target = "duongDan")
     HoaDonDetailResponse.SanPhamChiTietInfo mapToSanPhamChiTietInfo(HoaDonChiTiet hoaDonChiTiet);

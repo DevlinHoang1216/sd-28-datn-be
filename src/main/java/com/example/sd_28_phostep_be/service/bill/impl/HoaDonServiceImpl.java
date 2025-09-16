@@ -5,18 +5,35 @@ import com.example.sd_28_phostep_be.common.bill.HoaDonMapper;
 import com.example.sd_28_phostep_be.dto.bill.response.HoaDonDTOResponse;
 import com.example.sd_28_phostep_be.dto.bill.response.HoaDonDetailResponse;
 import com.example.sd_28_phostep_be.dto.bill.request.UpdateCustomerRequest;
+import com.example.sd_28_phostep_be.dto.sell.request.PaymentRequest;
+import com.example.sd_28_phostep_be.dto.sell.response.PaymentResponse;
 import com.example.sd_28_phostep_be.exception.ResourceNotFoundException;
 import com.example.sd_28_phostep_be.modal.bill.HoaDon;
+import com.example.sd_28_phostep_be.modal.bill.HoaDonChiTiet;
 import com.example.sd_28_phostep_be.modal.bill.LichSuHoaDon;
+import com.example.sd_28_phostep_be.modal.product.ChiTietSanPham;
+import com.example.sd_28_phostep_be.modal.sell.HinhThucThanhToan;
+import com.example.sd_28_phostep_be.modal.sell.PhuongThucThanhToan;
+import com.example.sd_28_phostep_be.modal.sale.PhieuGiamGia;
 import com.example.sd_28_phostep_be.repository.account.KhachHang.KhachHangRepository;
 import com.example.sd_28_phostep_be.repository.account.NhanVien.NhanVienRepository;
 import com.example.sd_28_phostep_be.repository.bill.HoaDonRepository;
+import com.example.sd_28_phostep_be.repository.bill.HoaDonChiTietRepository;
 import com.example.sd_28_phostep_be.repository.bill.LichSuHoaDonRepository;
+import com.example.sd_28_phostep_be.repository.product.ChiTietSanPhamRepository;
+import com.example.sd_28_phostep_be.repository.sell.HinhThucThanhToanRepository;
+import com.example.sd_28_phostep_be.repository.sell.PhuongThucThanhToanRepository;
+import com.example.sd_28_phostep_be.repository.sale.PhieuGiamGia.PhieuGiamGiaRepository;
+import com.example.sd_28_phostep_be.repository.sell.GioHangRepository;
+import com.example.sd_28_phostep_be.repository.sell.GioHangChiTietRepository;
+import com.example.sd_28_phostep_be.modal.sell.GioHang;
+import com.example.sd_28_phostep_be.modal.sell.GioHangChiTiet;
 import com.example.sd_28_phostep_be.service.bill.HoaDonService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -26,6 +43,7 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -47,6 +65,27 @@ public class HoaDonServiceImpl implements HoaDonService {
 
     @Autowired
     private KhachHangRepository khachHangRepository;
+
+    @Autowired
+    private HoaDonChiTietRepository hoaDonChiTietRepository;
+
+    @Autowired
+    private ChiTietSanPhamRepository chiTietSanPhamRepository;
+
+    @Autowired
+    private HinhThucThanhToanRepository hinhThucThanhToanRepository;
+
+    @Autowired
+    private PhuongThucThanhToanRepository phuongThucThanhToanRepository;
+
+    @Autowired
+    private PhieuGiamGiaRepository phieuGiamGiaRepository;
+
+    @Autowired
+    private GioHangRepository gioHangRepository;
+
+    @Autowired
+    private GioHangChiTietRepository gioHangChiTietRepository;
 
     @Override
     public Page<HoaDonDTOResponse> getHoaDonAndFilters(String keyword, Long minAmount, Long maxAmount, Timestamp startDate, Timestamp endDate, Short trangThai, String loaiDon, Pageable pageable) {
@@ -287,13 +326,202 @@ public class HoaDonServiceImpl implements HoaDonService {
     }
 
     @Override
+    @Transactional
     public void deletePendingInvoice(Integer id) {
-        HoaDon invoice = hoaDonRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Hóa đơn không tồn tại"));
-        
-        // Hard delete - remove from database completely
-        hoaDonRepository.delete(invoice);
+        try {
+            HoaDon invoice = hoaDonRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Hóa đơn không tồn tại"));
+            
+            // Only allow deletion of pending invoices (status = 0)
+            if (invoice.getTrangThai() != 0) {
+                throw new RuntimeException("Chỉ có thể xóa hóa đơn đang chờ");
+            }
+            
+            // Get all cart items for this invoice
+            List<HoaDonChiTiet> cartItems = hoaDonChiTietRepository.findAllByHoaDonId(id);
+            
+            // Restore product quantities for each cart item before deletion
+            for (HoaDonChiTiet cartItem : cartItems) {
+                ChiTietSanPham chiTietSanPham = cartItem.getIdChiTietSp();
+                if (chiTietSanPham != null) {
+                    // Restore the quantity back to inventory
+                    Integer currentStock = chiTietSanPham.getSoLuongTonKho();
+                    Integer quantityToRestore = cartItem.getSoLuong();
+                    chiTietSanPham.setSoLuongTonKho(currentStock + quantityToRestore);
+                    
+                    // Save the updated product detail
+                    chiTietSanPhamRepository.save(chiTietSanPham);
+                }
+            }
+            
+            // Delete cart items after restoring quantities
+            if (!cartItems.isEmpty()) {
+                hoaDonChiTietRepository.deleteAll(cartItems);
+            }
+            
+            // Delete any GioHang records that reference this invoice
+            gioHangRepository.findByHoaDonId(id).ifPresent(gioHang -> {
+                // First, get all cart details for this cart and restore product quantities
+                List<GioHangChiTiet> gioHangChiTietList = gioHangChiTietRepository.findByGioHangId(gioHang.getId());
+                
+                // Restore product quantities from cart details
+                for (GioHangChiTiet gioHangChiTiet : gioHangChiTietList) {
+                    ChiTietSanPham chiTietSanPham = gioHangChiTiet.getIdChiTietSp();
+                    if (chiTietSanPham != null) {
+                        // Restore the quantity back to inventory
+                        Integer currentStock = chiTietSanPham.getSoLuongTonKho();
+                        Integer quantityToRestore = gioHangChiTiet.getSoLuong();
+                        chiTietSanPham.setSoLuongTonKho(currentStock + quantityToRestore);
+                        
+                        // Save the updated product detail
+                        chiTietSanPhamRepository.save(chiTietSanPham);
+                    }
+                }
+                
+                // Delete cart details first
+                if (!gioHangChiTietList.isEmpty()) {
+                    gioHangChiTietRepository.deleteAll(gioHangChiTietList);
+                }
+                
+                // Then delete the cart
+                gioHangRepository.delete(gioHang);
+            });
+            
+            // Finally delete the invoice
+            hoaDonRepository.delete(invoice);
+            
+        } catch (Exception e) {
+            throw new RuntimeException("Lỗi khi xóa hóa đơn: " + e.getMessage());
+        }
     }
 
+    @Override
+    public PaymentResponse processPayment(PaymentRequest paymentRequest) {
+        try {
+            // 1. Validate and get the pending invoice
+            HoaDon hoaDon = hoaDonRepository.findById(paymentRequest.getHoaDonId())
+                    .orElseThrow(() -> new RuntimeException("Hóa đơn không tồn tại"));
+
+            if (hoaDon.getTrangThai() != 0) {
+                return PaymentResponse.error("Hóa đơn đã được thanh toán hoặc không ở trạng thái chờ");
+            }
+
+            // 2. Validate payment amounts
+            BigDecimal totalPayment = paymentRequest.getTienMat().add(paymentRequest.getTienChuyenKhoan());
+            if (totalPayment.compareTo(paymentRequest.getTongTien()) < 0) {
+                return PaymentResponse.error("Số tiền thanh toán không đủ");
+            }
+
+            // 3. Calculate change for cash payments
+            BigDecimal tienThua = BigDecimal.ZERO;
+            if ("TIEN_MAT".equals(paymentRequest.getPhuongThucThanhToan())) {
+                tienThua = paymentRequest.getTienMat().subtract(paymentRequest.getTongTien());
+                if (tienThua.compareTo(BigDecimal.ZERO) < 0) {
+                    return PaymentResponse.error("Số tiền mặt không đủ để thanh toán");
+                }
+            }
+
+            // 4. Update invoice information
+            hoaDon.setTrangThai((short) 5); // Đã hoàn thành
+            hoaDon.setDeleted(false); // Mark as active invoice
+            hoaDon.setTienSanPham(paymentRequest.getTongTien());
+            hoaDon.setPhiVanChuyen(paymentRequest.getPhiVanChuyen());
+            hoaDon.setTongTien(paymentRequest.getTongTien());
+            hoaDon.setTongTienSauGiam(paymentRequest.getTongTien());
+            hoaDon.setUpdatedAt(Instant.now());
+
+            // Set employee
+            hoaDon.setIdNhanVien(nhanVienRepository.findById(paymentRequest.getNhanVienId())
+                    .orElseThrow(() -> new RuntimeException("Nhân viên không tồn tại")));
+
+            // Apply voucher if provided
+            if (paymentRequest.getPhieuGiamGiaId() != null) {
+                PhieuGiamGia voucher = phieuGiamGiaRepository.findById(paymentRequest.getPhieuGiamGiaId())
+                        .orElseThrow(() -> new RuntimeException("Phiếu giảm giá không tồn tại"));
+                hoaDon.setIdPhieuGiamGia(voucher);
+            }
+
+            // 5. Create invoice details (HoaDonChiTiet) from actual cart data
+            // First, get the actual cart data to ensure consistency
+            Optional<GioHang> gioHangOpt = gioHangRepository.findByHoaDonId(hoaDon.getId());
+            if (gioHangOpt.isPresent()) {
+                List<GioHangChiTiet> gioHangChiTietList = gioHangChiTietRepository.findByGioHangId(gioHangOpt.get().getId());
+                
+                for (GioHangChiTiet cartItem : gioHangChiTietList) {
+                    ChiTietSanPham chiTietSanPham = cartItem.getIdChiTietSp();
+                    
+                    // Create invoice detail using cart data (preserves original price and quantity)
+                    // Stock was already reduced when items were added to cart, so no need to reduce again
+                    HoaDonChiTiet hoaDonChiTiet = HoaDonChiTiet.builder()
+                            .idHoaDon(hoaDon)
+                            .idChiTietSp(chiTietSanPham)
+                            .gia(cartItem.getGia()) // Use price from cart, not current product price
+                            .soLuong(cartItem.getSoLuong()) // Use quantity from cart
+                            .trangThai((short) 1)
+                            .build();
+
+                    hoaDonChiTietRepository.save(hoaDonChiTiet);
+                    
+                    // NOTE: Do NOT reduce stock here as it was already reduced when adding to cart
+                    // Stock reduction happens when items are added to cart, not during payment
+                }
+                
+                // Clean up cart data immediately after creating invoice details
+                // This ensures all data is transferred to HoaDonChiTiet before deletion
+                gioHangChiTietRepository.deleteAll(gioHangChiTietList);
+                gioHangRepository.delete(gioHangOpt.get());
+                
+            } else {
+                return PaymentResponse.error("Không tìm thấy giỏ hàng cho hóa đơn này");
+            }
+
+            // 6. Get existing payment method by type
+            PhuongThucThanhToan phuongThuc = phuongThucThanhToanRepository
+                    .findByKieuThanhToan(paymentRequest.getPhuongThucThanhToan())
+                    .orElseThrow(() -> new RuntimeException("Phương thức thanh toán không tồn tại: " + paymentRequest.getPhuongThucThanhToan()));
+
+            HinhThucThanhToan hinhThucThanhToan = HinhThucThanhToan.builder()
+                    .idHoaDon(hoaDon)
+                    .idPhuongThucThanhToan(phuongThuc)
+                    .tienMat(paymentRequest.getTienMat())
+                    .tienChuyenKhoan(paymentRequest.getTienChuyenKhoan())
+                    .deleted(false)
+                    .build();
+
+            hinhThucThanhToanRepository.save(hinhThucThanhToan);
+
+            // 7. Create payment history record (LichSuHoaDon)
+            LichSuHoaDon lichSuHoaDon = new LichSuHoaDon();
+            lichSuHoaDon.setHanhDong("Thanh toán thành công - " + paymentRequest.getPhuongThucThanhToan());
+            lichSuHoaDon.setThoiGian(Instant.now());
+            lichSuHoaDon.setIdNhanVien(nhanVienRepository.findById(paymentRequest.getNhanVienId()).orElse(null));
+            lichSuHoaDon.setIdHoaDon(hoaDon);
+            lichSuHoaDon.setDeleted((short) 5); // Status = 5 (completed)
+
+            if (paymentRequest.getGhiChu() != null && !paymentRequest.getGhiChu().trim().isEmpty()) {
+                lichSuHoaDon.setHanhDong(lichSuHoaDon.getHanhDong() + " - Ghi chú: " + paymentRequest.getGhiChu().trim());
+            }
+
+            lichSuHoaDonRepository.save(lichSuHoaDon);
+
+            // 8. Cart cleanup already handled in step 5 after creating HoaDonChiTiet
+            // This ensures data consistency and prevents issues with missing cart data
+
+            // 9. Save the updated invoice
+            HoaDon savedHoaDon = hoaDonRepository.save(hoaDon);
+
+            // 10. Return success response
+            return PaymentResponse.success(
+                    savedHoaDon.getId(),
+                    savedHoaDon.getMa(),
+                    paymentRequest.getTongTien(),
+                    tienThua,
+                    paymentRequest.getPhuongThucThanhToan()
+            );
+
+        } catch (Exception e) {
+            return PaymentResponse.error("Lỗi xử lý thanh toán: " + e.getMessage());
+        }
+    }
 
 }
