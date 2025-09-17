@@ -1,6 +1,7 @@
 package com.example.sd_28_phostep_be.controller.product;
 
 import com.example.sd_28_phostep_be.dto.product.request.ChiTietSanPhamUpdateRequest;
+import com.example.sd_28_phostep_be.dto.product.response.ChiTietSanPhamWithDiscountResponse;
 import com.example.sd_28_phostep_be.modal.product.ChiTietSanPham;
 import com.example.sd_28_phostep_be.service.product.ChiTietSanPhamService;
 import jakarta.validation.Valid;
@@ -125,7 +126,7 @@ public class ChiTietSanPhamController {
     
     // Sales counter endpoints with discount campaign prices
     @GetMapping("/sales/with-discounts")
-    public List<ChiTietSanPhamService.ChiTietSanPhamWithDiscount> getActiveProductDetailsWithDiscountPrices() {
+    public List<ChiTietSanPhamWithDiscountResponse> getActiveProductDetailsWithDiscountPrices() {
         return chiTietSanPhamService.getActiveProductDetailsWithDiscountPrices();
     }
     
