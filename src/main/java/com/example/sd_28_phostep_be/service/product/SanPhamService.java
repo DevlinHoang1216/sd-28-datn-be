@@ -3,11 +3,14 @@ package com.example.sd_28_phostep_be.service.product;
 import com.example.sd_28_phostep_be.dto.product.request.ProductWithVariantsCreateRequest;
 import com.example.sd_28_phostep_be.dto.product.request.SanPhamCreateRequest;
 import com.example.sd_28_phostep_be.dto.product.request.SanPhamUpdateRequest;
+import com.example.sd_28_phostep_be.dto.product.response.SanPhamResponse;
+import com.example.sd_28_phostep_be.dto.product.response.ChiTietSanPhamResponse;
 import com.example.sd_28_phostep_be.modal.product.*;
 import com.example.sd_28_phostep_be.repository.product.AnhSanPhamRepository;
 import com.example.sd_28_phostep_be.repository.product.SanPhamRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Service class for SanPham entity
@@ -34,6 +38,120 @@ public class SanPhamService {
 
     public Page<SanPham> getAllWithDetailsPaged(Pageable pageable) {
         return sanPhamRepository.findAllActiveWithDetailsPaged(pageable);
+    }
+
+    /**
+     * Get all products with details as DTO response (to avoid Hibernate proxy serialization issues)
+     */
+    public Page<SanPhamResponse> getAllWithDetailsPagedAsDTO(Pageable pageable) {
+        Page<SanPham> sanPhamPage = sanPhamRepository.findAllActiveWithDetailsPaged(pageable);
+        
+        List<SanPhamResponse> sanPhamResponses = sanPhamPage.getContent().stream()
+                .map(this::convertToSanPhamResponse)
+                .collect(Collectors.toList());
+        
+        return new PageImpl<>(sanPhamResponses, pageable, sanPhamPage.getTotalElements());
+    }
+
+    /**
+     * Convert SanPham entity to SanPhamResponse DTO
+     */
+    private SanPhamResponse convertToSanPhamResponse(SanPham sanPham) {
+        // Determine status based on deleted field (true = active, false = inactive)
+        Boolean trangThai = sanPham.getDeleted() == null || !sanPham.getDeleted();
+        
+        SanPhamResponse.SanPhamResponseBuilder builder = SanPhamResponse.builder()
+                .id(sanPham.getId())
+                .ma(sanPham.getMa())
+                .tenSanPham(sanPham.getTenSanPham())
+                .moTa(sanPham.getMoTaSanPham())
+                .trangThai(trangThai)
+                .deleted(sanPham.getDeleted())
+                .ngayTao(sanPham.getNgayTao())
+                .ngayCapNhat(sanPham.getNgayCapNhat());
+
+        // Category info
+        if (sanPham.getIdDanhMuc() != null) {
+            builder.idDanhMuc(sanPham.getIdDanhMuc().getId())
+                   .tenDanhMuc(sanPham.getIdDanhMuc().getTenDanhMuc());
+        }
+
+        // Brand info
+        if (sanPham.getIdThuongHieu() != null) {
+            builder.idThuongHieu(sanPham.getIdThuongHieu().getId())
+                   .tenThuongHieu(sanPham.getIdThuongHieu().getTenThuongHieu());
+        }
+
+        // Material info
+        if (sanPham.getIdChatLieu() != null) {
+            builder.idChatLieu(sanPham.getIdChatLieu().getId())
+                   .tenChatLieu(sanPham.getIdChatLieu().getTenChatLieu());
+        }
+
+        // Sole info
+        if (sanPham.getIdDeGiay() != null) {
+            builder.idDeGiay(sanPham.getIdDeGiay().getId())
+                   .tenDeGiay(sanPham.getIdDeGiay().getTenDeGiay());
+        }
+
+        // Product variants
+        if (sanPham.getChiTietSanPhams() != null) {
+            List<ChiTietSanPhamResponse> chiTietResponses = sanPham.getChiTietSanPhams().stream()
+                    .map(this::convertToChiTietSanPhamResponse)
+                    .collect(Collectors.toList());
+            
+            builder.chiTietSanPhams(chiTietResponses)
+                   .totalVariants((long) chiTietResponses.size())
+                   .activeVariants(chiTietResponses.stream()
+                           .filter(ct -> ct.getTrangThai() != null && ct.getTrangThai())
+                           .count());
+        }
+
+        return builder.build();
+    }
+
+    /**
+     * Convert ChiTietSanPham entity to ChiTietSanPhamResponse DTO
+     */
+    private ChiTietSanPhamResponse convertToChiTietSanPhamResponse(ChiTietSanPham chiTiet) {
+        // Determine status based on deleted field (true = active, false = inactive)
+        Boolean trangThai = chiTiet.getDeleted() == null || !chiTiet.getDeleted();
+        
+        ChiTietSanPhamResponse.ChiTietSanPhamResponseBuilder builder = ChiTietSanPhamResponse.builder()
+                .id(chiTiet.getId())
+                .ma(chiTiet.getMa())
+                .giaBan(chiTiet.getGiaBan())
+                .soLuongTonKho(chiTiet.getSoLuongTonKho())
+                .trangThai(trangThai)
+                .deleted(chiTiet.getDeleted())
+                .ngayTao(chiTiet.getNgayTao())
+                .ngayCapNhat(chiTiet.getNgayCapNhat());
+
+        // Product info
+        if (chiTiet.getIdSanPham() != null) {
+            builder.idSanPham(chiTiet.getIdSanPham().getId())
+                   .tenSanPham(chiTiet.getIdSanPham().getTenSanPham());
+        }
+
+        // Color info
+        if (chiTiet.getIdMauSac() != null) {
+            builder.idMauSac(chiTiet.getIdMauSac().getId())
+                   .tenMauSac(chiTiet.getIdMauSac().getTenMauSac())
+                   .hexMauSac(chiTiet.getIdMauSac().getHex());
+        }
+
+        // Size info
+        if (chiTiet.getIdKichCo() != null) {
+            builder.idKichCo(chiTiet.getIdKichCo().getId())
+                   .tenKichCo(chiTiet.getIdKichCo().getTenKichCo());
+        }
+
+        // Image info - get first image URL if available
+        if (chiTiet.getIdSanPham() != null && chiTiet.getIdSanPham().getIdAnhSanPham() != null) {
+            builder.urlAnhSanPham(chiTiet.getIdSanPham().getIdAnhSanPham().getUrlAnh());
+        }
+
+        return builder.build();
     }
 
     public Optional<SanPham> findById(Integer id) {

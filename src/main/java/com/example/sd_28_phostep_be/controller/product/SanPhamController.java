@@ -4,6 +4,7 @@ import com.example.sd_28_phostep_be.dto.product.request.ChiTietSanPhamCreateRequ
 import com.example.sd_28_phostep_be.dto.product.request.ProductWithVariantsCreateRequest;
 import com.example.sd_28_phostep_be.dto.product.request.SanPhamUpdateRequest;
 import com.example.sd_28_phostep_be.dto.product.request.SanPhamCreateRequest;
+import com.example.sd_28_phostep_be.dto.product.response.SanPhamResponse;
 import com.example.sd_28_phostep_be.modal.product.ChiTietSanPham;
 import com.example.sd_28_phostep_be.modal.product.SanPham;
 import com.example.sd_28_phostep_be.service.product.ChiTietSanPhamService;
@@ -33,7 +34,7 @@ public class SanPhamController {
     }
 
     @GetMapping
-    public Page<SanPham> getAllWithDetailsPaged(
+    public Page<SanPhamResponse> getAllWithDetailsPaged(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
@@ -44,7 +45,7 @@ public class SanPhamController {
             Sort.by(sortBy).ascending();
             
         Pageable pageable = PageRequest.of(page, size, sort);
-        return sanPhamService.getAllWithDetailsPaged(pageable);
+        return sanPhamService.getAllWithDetailsPagedAsDTO(pageable);
     }
 
     @GetMapping("/{id}")
