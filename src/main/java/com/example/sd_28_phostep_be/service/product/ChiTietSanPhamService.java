@@ -2,6 +2,7 @@ package com.example.sd_28_phostep_be.service.product;
 
 import com.example.sd_28_phostep_be.dto.product.request.ChiTietSanPhamCreateRequest;
 import com.example.sd_28_phostep_be.dto.product.request.ChiTietSanPhamUpdateRequest;
+import com.example.sd_28_phostep_be.dto.product.response.ChiTietSanPhamWithDiscountResponse;
 import com.example.sd_28_phostep_be.modal.product.*;
 import com.example.sd_28_phostep_be.modal.sale.ChiTietDotGiamGia;
 import com.example.sd_28_phostep_be.modal.sale.DotGiamGia;
@@ -207,14 +208,38 @@ public class ChiTietSanPhamService {
     /**
      * Get active product details with discount information for sales counter
      */
-    public List<ChiTietSanPhamWithDiscount> getActiveProductDetailsWithDiscountPrices() {
+    public List<ChiTietSanPhamWithDiscountResponse> getActiveProductDetailsWithDiscountPrices() {
         List<ChiTietSanPham> products = chiTietSanPhamRepository.findActiveProductDetailsForSales();
-        List<ChiTietSanPhamWithDiscount> result = new ArrayList<>();
+        List<ChiTietSanPhamWithDiscountResponse> result = new ArrayList<>();
         
         for (ChiTietSanPham product : products) {
             DiscountInfo discountInfo = getDiscountInfo(product);
-            ChiTietSanPhamWithDiscount productWithDiscount = new ChiTietSanPhamWithDiscount(product, discountInfo);
-            result.add(productWithDiscount);
+            
+            // Create DTO response to avoid Hibernate proxy serialization issues
+            ChiTietSanPhamWithDiscountResponse response = new ChiTietSanPhamWithDiscountResponse(
+                product.getId(),
+                product.getMa(),
+                product.getGiaBan(),
+                product.getSoLuongTonKho(),
+                product.getIdSanPham() != null ? product.getIdSanPham().getTenSanPham() : null,
+                product.getIdSanPham() != null && product.getIdSanPham().getIdDanhMuc() != null ? 
+                    product.getIdSanPham().getIdDanhMuc().getTenDanhMuc() : null,
+                product.getIdSanPham() != null && product.getIdSanPham().getIdThuongHieu() != null ? 
+                    product.getIdSanPham().getIdThuongHieu().getTenThuongHieu() : null,
+                product.getIdSanPham() != null && product.getIdSanPham().getIdChatLieu() != null ? 
+                    product.getIdSanPham().getIdChatLieu().getTenChatLieu() : null,
+                product.getIdSanPham() != null && product.getIdSanPham().getIdDeGiay() != null ? 
+                    product.getIdSanPham().getIdDeGiay().getTenDeGiay() : null,
+                product.getIdMauSac() != null ? product.getIdMauSac().getTenMauSac() : null,
+                product.getIdMauSac() != null ? product.getIdMauSac().getHex() : null,
+                product.getIdKichCo() != null ? product.getIdKichCo().getTenKichCo() : null,
+                product.getIdAnhSanPham() != null ? product.getIdAnhSanPham().getUrlAnh() : null,
+                discountInfo != null ? discountInfo.getDiscountedPrice() : null,
+                discountInfo != null ? discountInfo.getCampaignName() : null,
+                discountInfo != null
+            );
+            
+            result.add(response);
         }
         
         return result;

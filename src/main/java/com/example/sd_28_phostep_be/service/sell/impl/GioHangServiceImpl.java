@@ -282,4 +282,22 @@ public class GioHangServiceImpl implements GioHangService {
             .createdAt(item.getCreatedAt())
             .build();
     }
+
+    @Override
+    public void updateCartCustomer(Integer hoaDonId, Integer customerId) {
+        // Find cart by invoice ID
+        Optional<GioHang> cartOptional = gioHangRepository.findByHoaDonId(hoaDonId);
+        
+        if (cartOptional.isPresent()) {
+            GioHang cart = cartOptional.get();
+            
+            // Get customer from invoice
+            HoaDon hoaDon = hoaDonRepository.findById(hoaDonId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy hóa đơn với ID: " + hoaDonId));
+            
+            // Update cart customer to match invoice customer
+            cart.setIdKhachHang(hoaDon.getIdKhachHang());
+            gioHangRepository.save(cart);
+        }
+    }
 }

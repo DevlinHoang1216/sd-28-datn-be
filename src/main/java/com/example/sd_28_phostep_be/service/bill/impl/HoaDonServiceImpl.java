@@ -29,6 +29,7 @@ import com.example.sd_28_phostep_be.repository.sell.GioHangChiTietRepository;
 import com.example.sd_28_phostep_be.modal.sell.GioHang;
 import com.example.sd_28_phostep_be.modal.sell.GioHangChiTiet;
 import com.example.sd_28_phostep_be.service.bill.HoaDonService;
+import com.example.sd_28_phostep_be.service.sell.GioHangService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -86,6 +87,9 @@ public class HoaDonServiceImpl implements HoaDonService {
 
     @Autowired
     private GioHangChiTietRepository gioHangChiTietRepository;
+
+    @Autowired
+    private GioHangService gioHangService;
 
     @Override
     public Page<HoaDonDTOResponse> getHoaDonAndFilters(String keyword, Long minAmount, Long maxAmount, Timestamp startDate, Timestamp endDate, Short trangThai, String loaiDon, Pageable pageable) {
@@ -293,6 +297,7 @@ public class HoaDonServiceImpl implements HoaDonService {
     }
 
     @Override
+    @Transactional
     public HoaDon updatePendingInvoiceCustomer(Integer id, UpdateCustomerRequest request) {
         HoaDon invoice = hoaDonRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Hóa đơn không tồn tại"));
@@ -322,7 +327,13 @@ public class HoaDonServiceImpl implements HoaDonService {
         // Update timestamp
         invoice.setUpdatedAt(Instant.now());
         
-        return hoaDonRepository.save(invoice);
+        // Save invoice first
+        HoaDon savedInvoice = hoaDonRepository.save(invoice);
+        
+        // Synchronize cart customer ID with invoice customer ID
+        gioHangService.updateCartCustomer(id, request.getKhachHangId());
+        
+        return savedInvoice;
     }
 
     @Override

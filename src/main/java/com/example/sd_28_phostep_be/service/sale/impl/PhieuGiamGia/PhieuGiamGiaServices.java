@@ -290,6 +290,23 @@ public class PhieuGiamGiaServices {
         return phieuGiamGiaRepository.findAll().stream()
                 .filter(pgg -> pgg.getTrangThai() != null && pgg.getTrangThai()) // Trạng thái true
                 .filter(pgg -> pgg.getDeleted() == null || !pgg.getDeleted()) // Deleted false
+                .filter(pgg -> pgg.getRiengTu() == null || !pgg.getRiengTu()) // Chỉ lấy phiếu công khai (không riêng tư)
+                .filter(pgg -> {
+                    // Kiểm tra ngày hiệu lực
+                    LocalDate today = LocalDate.now();
+                    LocalDate startDate = pgg.getNgayBatDau() != null ? 
+                        pgg.getNgayBatDau().atZone(ZoneId.systemDefault()).toLocalDate() : null;
+                    LocalDate endDate = pgg.getNgayKetThuc() != null ? 
+                        pgg.getNgayKetThuc().atZone(ZoneId.systemDefault()).toLocalDate() : null;
+                    
+                    boolean isValidDate = (startDate == null || !today.isBefore(startDate)) && 
+                                         (endDate == null || !today.isAfter(endDate));
+                    
+                    // Kiểm tra số lượng sử dụng (chỉ kiểm tra soLuongDung > 0)
+                    boolean hasQuantity = pgg.getSoLuongDung() != null && pgg.getSoLuongDung() > 0;
+                    
+                    return isValidDate && hasQuantity;
+                })
                 .collect(Collectors.toList());
     }
 
@@ -326,6 +343,12 @@ public class PhieuGiamGiaServices {
         // Trừ số lượng sử dụng
         if (phieuGiamGia.getSoLuongDung() != null) {
             phieuGiamGia.setSoLuongDung(phieuGiamGia.getSoLuongDung() - 1);
+            
+            // Nếu số lượng dùng = 0, chuyển trạng thái về false (đã kết thúc)
+            if (phieuGiamGia.getSoLuongDung() <= 0) {
+                phieuGiamGia.setTrangThai(false);
+            }
+            
             phieuGiamGiaRepository.save(phieuGiamGia);
         }
 
@@ -367,6 +390,23 @@ public class PhieuGiamGiaServices {
 
         if (phieuGiamGia.getSoLuongDung() != null) {
             phieuGiamGia.setSoLuongDung(phieuGiamGia.getSoLuongDung() + 1);
+            
+            // Nếu phiếu giảm giá bị tắt do hết số lượng và bây giờ có số lượng > 0
+            // Kiểm tra các điều kiện khác (ngày hiệu lực) để quyết định có bật lại không
+            if (phieuGiamGia.getSoLuongDung() > 0 && 
+                (phieuGiamGia.getTrangThai() == null || !phieuGiamGia.getTrangThai())) {
+                
+                // Kiểm tra ngày hiệu lực
+                Instant now = Instant.now();
+                boolean isValidDate = (phieuGiamGia.getNgayBatDau() == null || !phieuGiamGia.getNgayBatDau().isAfter(now)) &&
+                                     (phieuGiamGia.getNgayKetThuc() == null || !phieuGiamGia.getNgayKetThuc().isBefore(now));
+                
+                // Chỉ bật lại nếu còn trong thời hạn hiệu lực
+                if (isValidDate) {
+                    phieuGiamGia.setTrangThai(true);
+                }
+            }
+            
             phieuGiamGiaRepository.save(phieuGiamGia);
         }
     }

@@ -36,4 +36,9 @@ public interface GioHangService {
      * Get cart by invoice ID
      */
     CartResponse getCartByInvoiceId(Integer hoaDonId);
+    
+    /**
+     * Update cart customer to match invoice customer
+     */
+    void updateCartCustomer(Integer hoaDonId, Integer customerId);
 }
