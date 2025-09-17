@@ -15,6 +15,7 @@ public class SanPhamResponse {
     private String ma;
     private String tenSanPham;
     private String moTa;
+    private String quocGiaSanXuat;
     private Boolean trangThai;
     private Boolean deleted;
     private Instant ngayTao;

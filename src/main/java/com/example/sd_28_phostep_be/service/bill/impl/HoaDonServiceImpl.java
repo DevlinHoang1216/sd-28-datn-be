@@ -418,15 +418,17 @@ public class HoaDonServiceImpl implements HoaDonService {
             }
 
             // 2. Validate payment amounts
+            BigDecimal tongTienSauGiam = paymentRequest.getTongTienSauGiam() != null ? 
+                paymentRequest.getTongTienSauGiam() : paymentRequest.getTongTien();
             BigDecimal totalPayment = paymentRequest.getTienMat().add(paymentRequest.getTienChuyenKhoan());
-            if (totalPayment.compareTo(paymentRequest.getTongTien()) < 0) {
+            if (totalPayment.compareTo(tongTienSauGiam) < 0) {
                 return PaymentResponse.error("Số tiền thanh toán không đủ");
             }
 
             // 3. Calculate change for cash payments
             BigDecimal tienThua = BigDecimal.ZERO;
-            if ("TIEN_MAT".equals(paymentRequest.getPhuongThucThanhToan())) {
-                tienThua = paymentRequest.getTienMat().subtract(paymentRequest.getTongTien());
+            if ("Tiền mặt".equals(paymentRequest.getPhuongThucThanhToan())) {
+                tienThua = paymentRequest.getTienMat().subtract(tongTienSauGiam);
                 if (tienThua.compareTo(BigDecimal.ZERO) < 0) {
                     return PaymentResponse.error("Số tiền mặt không đủ để thanh toán");
                 }
@@ -435,10 +437,10 @@ public class HoaDonServiceImpl implements HoaDonService {
             // 4. Update invoice information
             hoaDon.setTrangThai((short) 5); // Đã hoàn thành
             hoaDon.setDeleted(false); // Mark as active invoice
-            hoaDon.setTienSanPham(paymentRequest.getTongTien());
+            hoaDon.setTienSanPham(paymentRequest.getTongTien()); // Original product total
             hoaDon.setPhiVanChuyen(paymentRequest.getPhiVanChuyen());
-            hoaDon.setTongTien(paymentRequest.getTongTien());
-            hoaDon.setTongTienSauGiam(paymentRequest.getTongTien());
+            hoaDon.setTongTien(paymentRequest.getTongTien()); // Original total before discount
+            hoaDon.setTongTienSauGiam(tongTienSauGiam); // Total after discount
             hoaDon.setUpdatedAt(Instant.now());
 
             // Set employee
