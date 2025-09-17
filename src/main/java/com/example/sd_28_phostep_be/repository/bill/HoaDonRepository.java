@@ -186,4 +186,19 @@ public interface HoaDonRepository extends JpaRepository<HoaDon, Integer> {
         ORDER BY h.createdAt DESC
         """)
     List<Object[]> getRecentOrders();
+
+    // Customer order history queries
+    @Query("SELECT h FROM HoaDon h WHERE h.idKhachHang = :khachHang ORDER BY h.createdAt DESC")
+    Page<HoaDon> findByIdKhachHangOrderByCreatedAtDesc(@Param("khachHang") com.example.sd_28_phostep_be.modal.account.KhachHang khachHang, Pageable pageable);
+
+    @Query("SELECT h FROM HoaDon h WHERE h.idKhachHang = :khachHang")
+    List<HoaDon> findByIdKhachHang(@Param("khachHang") com.example.sd_28_phostep_be.modal.account.KhachHang khachHang);
+    
+    // Find pending online invoice by customer
+    @Query("SELECT h FROM HoaDon h WHERE h.idKhachHang.id = :customerId AND h.trangThai = 0 AND h.loaiDon = 'Online' AND h.deleted = false")
+    HoaDon findPendingOnlineInvoiceByCustomer(@Param("customerId") Integer customerId);
+    
+    // Find pending online invoice by session (stored in ghiChu field temporarily)
+    @Query("SELECT h FROM HoaDon h WHERE h.ghiChu = :sessionId AND h.trangThai = 0 AND h.loaiDon = 'Online' AND h.deleted = false AND h.idKhachHang.id = 1")
+    HoaDon findPendingOnlineInvoiceBySession(@Param("sessionId") String sessionId);
 }
