@@ -2,6 +2,7 @@ package com.example.sd_28_phostep_be.repository.account.KhachHang;
 
 import com.example.sd_28_phostep_be.dto.account.response.KhachHang.KhachHangDTOResponse;
 import com.example.sd_28_phostep_be.modal.account.KhachHang;
+import com.example.sd_28_phostep_be.modal.account.TaiKhoan;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface KhachHangRepository extends JpaRepository<KhachHang, Integer> {
@@ -106,4 +108,11 @@ public interface KhachHangRepository extends JpaRepository<KhachHang, Integer> {
     // Statistics query
     @Query("SELECT COUNT(kh) FROM KhachHang kh WHERE kh.deleted = false OR kh.deleted IS NULL")
     Long getTotalActiveCustomers();
+
+    // Find customer by TaiKhoan for authentication
+    Optional<KhachHang> findByTaiKhoan(TaiKhoan taiKhoan);
+    
+    // Find customer by TaiKhoan ID directly
+    @Query("SELECT kh FROM KhachHang kh WHERE kh.taiKhoan.id = :taiKhoanId")
+    Optional<KhachHang> findByTaiKhoanId(@Param("taiKhoanId") Integer taiKhoanId);
 }
