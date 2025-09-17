@@ -19,20 +19,69 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer> {
     @Query("SELECT sp FROM SanPham sp WHERE sp.deleted = false OR sp.deleted IS NULL")
     Page<SanPham> findAllActivePaged(Pageable pageable);
     
-    @Query("SELECT sp FROM SanPham sp LEFT JOIN FETCH sp.idDanhMuc LEFT JOIN FETCH sp.idThuongHieu LEFT JOIN FETCH sp.idChatLieu LEFT JOIN FETCH sp.idDeGiay")
+    @Query("SELECT DISTINCT sp FROM SanPham sp " +
+           "LEFT JOIN FETCH sp.idDanhMuc " +
+           "LEFT JOIN FETCH sp.idThuongHieu " +
+           "LEFT JOIN FETCH sp.idChatLieu " +
+           "LEFT JOIN FETCH sp.idDeGiay " +
+           "LEFT JOIN FETCH sp.idAnhSanPham " +
+           "LEFT JOIN FETCH sp.chiTietSanPhams ctsp")
     Page<SanPham> findAllActiveWithDetailsPaged(Pageable pageable);
     
     /**
-     * Find active products for sales counter
+     * Find active products for sales counter with all necessary relationships
      */
-    @Query("SELECT sp FROM SanPham sp LEFT JOIN FETCH sp.idDanhMuc LEFT JOIN FETCH sp.idThuongHieu LEFT JOIN FETCH sp.idChatLieu LEFT JOIN FETCH sp.idDeGiay WHERE (sp.deleted = false OR sp.deleted IS NULL)")
+    @Query("SELECT DISTINCT sp FROM SanPham sp " +
+           "LEFT JOIN FETCH sp.idDanhMuc " +
+           "LEFT JOIN FETCH sp.idThuongHieu " +
+           "LEFT JOIN FETCH sp.idChatLieu " +
+           "LEFT JOIN FETCH sp.idDeGiay " +
+           "LEFT JOIN FETCH sp.idAnhSanPham " +
+           "LEFT JOIN FETCH sp.chiTietSanPhams ctsp " +
+           "WHERE (sp.deleted = false OR sp.deleted IS NULL)")
     Page<SanPham> findActiveProductsForSales(Pageable pageable);
     
     /**
-     * Find active products for sales counter with keyword search
+     * Find active products for sales counter with keyword search and all necessary relationships
      */
-    @Query("SELECT sp FROM SanPham sp LEFT JOIN FETCH sp.idDanhMuc LEFT JOIN FETCH sp.idThuongHieu LEFT JOIN FETCH sp.idChatLieu LEFT JOIN FETCH sp.idDeGiay WHERE (sp.deleted = false OR sp.deleted IS NULL) AND (LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(sp.ma) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    @Query("SELECT DISTINCT sp FROM SanPham sp " +
+           "LEFT JOIN FETCH sp.idDanhMuc " +
+           "LEFT JOIN FETCH sp.idThuongHieu " +
+           "LEFT JOIN FETCH sp.idChatLieu " +
+           "LEFT JOIN FETCH sp.idDeGiay " +
+           "LEFT JOIN FETCH sp.idAnhSanPham " +
+           "LEFT JOIN FETCH sp.chiTietSanPhams ctsp " +
+           "WHERE (sp.deleted = false OR sp.deleted IS NULL) " +
+           "AND (LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(sp.ma) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Page<SanPham> findActiveProductsForSalesWithKeyword(Pageable pageable, String keyword);
+
+    /**
+     * Find products by brand IDs with all necessary relationships
+     */
+    @Query("SELECT DISTINCT sp FROM SanPham sp " +
+           "LEFT JOIN FETCH sp.idDanhMuc " +
+           "LEFT JOIN FETCH sp.idThuongHieu " +
+           "LEFT JOIN FETCH sp.idChatLieu " +
+           "LEFT JOIN FETCH sp.idDeGiay " +
+           "LEFT JOIN FETCH sp.idAnhSanPham " +
+           "LEFT JOIN FETCH sp.chiTietSanPhams ctsp " +
+           "WHERE (sp.deleted = false OR sp.deleted IS NULL) " +
+           "AND sp.idThuongHieu.id IN :brandIds")
+    Page<SanPham> findProductsByBrandIds(List<Integer> brandIds, Pageable pageable);
+
+    /**
+     * Find products by category names with all necessary relationships
+     */
+    @Query("SELECT DISTINCT sp FROM SanPham sp " +
+           "LEFT JOIN FETCH sp.idDanhMuc " +
+           "LEFT JOIN FETCH sp.idThuongHieu " +
+           "LEFT JOIN FETCH sp.idChatLieu " +
+           "LEFT JOIN FETCH sp.idDeGiay " +
+           "LEFT JOIN FETCH sp.idAnhSanPham " +
+           "LEFT JOIN FETCH sp.chiTietSanPhams ctsp " +
+           "WHERE (sp.deleted = false OR sp.deleted IS NULL) " +
+           "AND sp.idDanhMuc.tenDanhMuc = :categoryName")
+    Page<SanPham> findProductsByCategoryName(String categoryName, Pageable pageable);
 
     // Statistics query
     @Query("SELECT COUNT(sp) FROM SanPham sp WHERE sp.deleted = false OR sp.deleted IS NULL")
