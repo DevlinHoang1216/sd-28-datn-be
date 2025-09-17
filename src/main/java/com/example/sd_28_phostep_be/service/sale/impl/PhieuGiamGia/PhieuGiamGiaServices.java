@@ -130,16 +130,12 @@ public class PhieuGiamGiaServices {
     public PhieuGiamGia update(Long id, PhieuGiamGiaDTO dto) {
         PhieuGiamGia existingPgg = getById(id);
         Instant now = Instant.now();
-        Instant todayStart = now.atZone(ZoneId.systemDefault()).toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant();
         
         // Convert date strings to Instant
         Instant ngayBatDauInstant = convertDateStringToInstant(dto.getNgayBatDau());
         Instant ngayKetThucInstant = convertDateStringToInstant(dto.getNgayKetThuc());
 
-        // Check ngày bắt đầu - allow today's date
-        if (ngayBatDauInstant != null && ngayBatDauInstant.isBefore(todayStart)) {
-            throw new IllegalArgumentException("Ngày bắt đầu không được nhỏ hơn ngày hiện tại");
-        }
+        // For update operations, we don't validate past dates since we might be editing existing vouchers
 
         // Update fields
         existingPgg.setTenPhieuGiamGia(dto.getTenPhieuGiamGia());
