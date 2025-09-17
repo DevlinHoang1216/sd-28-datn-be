@@ -1,5 +1,6 @@
 package com.example.sd_28_phostep_be.modal.account;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
@@ -21,6 +22,7 @@ public class DiaChiKhachHang {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "id_khach_hang", referencedColumnName = "id")
+    @JsonIgnore
     private KhachHang idKhachHang;
 
     @Nationalized

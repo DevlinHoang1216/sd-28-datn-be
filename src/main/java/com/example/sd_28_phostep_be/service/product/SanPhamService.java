@@ -65,6 +65,7 @@ public class SanPhamService {
                 .ma(sanPham.getMa())
                 .tenSanPham(sanPham.getTenSanPham())
                 .moTa(sanPham.getMoTaSanPham())
+                .quocGiaSanXuat(sanPham.getQuocGiaSanXuat())
                 .trangThai(trangThai)
                 .deleted(sanPham.getDeleted())
                 .ngayTao(sanPham.getNgayTao())

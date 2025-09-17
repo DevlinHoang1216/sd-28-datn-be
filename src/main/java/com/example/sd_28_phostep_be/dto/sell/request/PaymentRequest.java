@@ -31,6 +31,12 @@ public class PaymentRequest {
     @Positive(message = "Tổng tiền phải lớn hơn 0")
     private BigDecimal tongTien;
     
+    @PositiveOrZero(message = "Tổng tiền sau giảm phải >= 0")
+    private BigDecimal tongTienSauGiam;
+    
+    @PositiveOrZero(message = "Giảm giá phải >= 0")
+    private BigDecimal giamGia = BigDecimal.ZERO;
+    
     @PositiveOrZero(message = "Tiền mặt phải >= 0")
     private BigDecimal tienMat = BigDecimal.ZERO;
     

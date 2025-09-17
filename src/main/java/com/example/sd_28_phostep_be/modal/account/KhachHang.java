@@ -60,8 +60,9 @@ public class KhachHang {
     @Column(name = "cccd")
     private String cccd;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_dia_chi_khach_hang", referencedColumnName = "id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "idKhachHang"})
     private DiaChiKhachHang idDiaChiKhachHang;
 
 }
