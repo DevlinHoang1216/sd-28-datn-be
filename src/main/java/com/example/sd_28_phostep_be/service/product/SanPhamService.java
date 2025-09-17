@@ -212,4 +212,15 @@ public class SanPhamService {
         
         return updatedProduct;
     }
+
+    /**
+     * Get products by brand IDs with pagination
+     */
+    public Page<SanPham> getProductsByBrandIds(List<Integer> brandIds, Pageable pageable) {
+        return sanPhamRepository.findProductsByBrandIds(brandIds, pageable);
+    }
+
+    public Page<SanPham> getProductsByCategoryName(String categoryName, Pageable pageable) {
+        return sanPhamRepository.findProductsByCategoryName(categoryName, pageable);
+    }
 }
