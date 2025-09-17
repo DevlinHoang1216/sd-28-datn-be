@@ -15,6 +15,7 @@ public class KhachHangDTOResponse {
     private Integer id;
     private String ma;
     private String ten;
+    private String email;
     private String soDienThoai;
     private Short gioiTinh;
     private Date ngaySinh;

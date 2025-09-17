@@ -23,6 +23,7 @@ public interface KhachHangRepository extends JpaRepository<KhachHang, Integer> {
             kh.id,
             kh.ma,
             kh.ten,
+            kh.taiKhoan.email,
             kh.taiKhoan.soDienThoai,
             kh.gioiTinh,
             kh.ngaySinh,
@@ -36,6 +37,7 @@ public interface KhachHangRepository extends JpaRepository<KhachHang, Integer> {
             OR kh.ma LIKE %:keyword%
             OR kh.ten LIKE %:keyword%
             OR kh.taiKhoan.soDienThoai LIKE %:keyword%
+            OR kh.taiKhoan.email LIKE %:keyword%
             OR kh.cccd LIKE %:keyword%
             OR (:keywordAsDate IS NOT NULL AND kh.ngaySinh = :keywordAsDate)
             )
@@ -57,6 +59,7 @@ public interface KhachHangRepository extends JpaRepository<KhachHang, Integer> {
             kh.id,
             kh.ma,
             kh.ten,
+            kh.taiKhoan.email,
             kh.taiKhoan.soDienThoai,
             kh.gioiTinh,
             kh.ngaySinh,
@@ -71,6 +74,7 @@ public interface KhachHangRepository extends JpaRepository<KhachHang, Integer> {
             AND (:keyword IS NULL OR :keyword = '' OR
                  LOWER(kh.ten) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
                  LOWER(kh.ma) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+                 LOWER(tk.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
                  LOWER(tk.soDienThoai) LIKE LOWER(CONCAT('%', :keyword, '%')))
             """)
     Page<KhachHangDTOResponse> findActiveCustomersForSales(Pageable pageable, @Param("keyword") String keyword);
@@ -83,6 +87,7 @@ public interface KhachHangRepository extends JpaRepository<KhachHang, Integer> {
             kh.id,
             kh.ma,
             kh.ten,
+            kh.taiKhoan.email,
             kh.taiKhoan.soDienThoai,
             kh.gioiTinh,
             kh.ngaySinh,
