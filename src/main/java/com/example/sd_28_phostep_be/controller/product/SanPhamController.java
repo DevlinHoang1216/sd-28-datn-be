@@ -142,4 +142,23 @@ public class SanPhamController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+    /**
+     * Get products with available stock for discount campaigns
+     * Only returns products that have at least one variant with stock > 0
+     */
+    @GetMapping("/available-for-discount")
+    public Page<SanPhamResponse> getProductsAvailableForDiscount(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir) {
+        
+        Sort sort = sortDir.equalsIgnoreCase("desc") ? 
+            Sort.by(sortBy).descending() : 
+            Sort.by(sortBy).ascending();
+            
+        Pageable pageable = PageRequest.of(page, size, sort);
+        return sanPhamService.getProductsAvailableForDiscount(pageable);
+    }
 }

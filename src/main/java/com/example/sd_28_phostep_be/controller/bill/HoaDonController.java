@@ -63,7 +63,9 @@ public class HoaDonController {
         if (startTimestamp != null && endTimestamp != null && startTimestamp.after(endTimestamp)) {
             return ResponseEntity.badRequest().body("startDate phải trước hoặc bằng endDate");
         }
-        Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);  // Xây sort động
+        // Validate and map sortBy field to actual entity fields
+        String validSortBy = mapSortField(sortBy);
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDir), validSortBy);  // Xây sort động
         Pageable pageable = PageRequest.of(page, size, sort);
         Page<HoaDonDTOResponse> response = hoaDonService.getHoaDonAndFilters(keyword, minAmount, maxAmount, startTimestamp, endTimestamp, trangThai, loaiDon, pageable);
         return ResponseEntity.ok(response);
@@ -135,6 +137,64 @@ public class HoaDonController {
         headers.setContentDispositionFormData("attachment", "hoa_don_" + hoaDon.getMaHoaDon() + ".pdf");
 
         return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
+    }
+
+    /**
+     * Map frontend sort field names to actual entity field names
+     * This prevents errors when frontend sends invalid field names
+     */
+    private String mapSortField(String sortBy) {
+        if (sortBy == null || sortBy.trim().isEmpty()) {
+            return "id"; // Default sort field
+        }
+        
+        switch (sortBy.toLowerCase()) {
+            case "tongtiensaugiam":
+            case "tong_tien_sau_giam":
+            case "tongtienthanhtoan": // Map invalid field to correct one
+            case "tong_tien_thanh_toan": // Map invalid field to correct one
+                return "tongTienSauGiam";
+            case "tongtien":
+            case "tong_tien":
+                return "tongTien";
+            case "tiensanpham":
+            case "tien_san_pham":
+                return "tienSanPham";
+            case "ngaytao":
+            case "ngay_tao":
+                return "ngayTao";
+            case "ngaythanhtoan":
+            case "ngay_thanh_toan":
+                return "ngayThanhToan";
+            case "trangthai":
+            case "trang_thai":
+                return "trangThai";
+            case "ma":
+                return "ma";
+            case "tenkhachhang":
+            case "ten_khach_hang":
+                return "tenKhachHang";
+            case "sodienthoaikhachhang":
+            case "so_dien_thoai_khach_hang":
+                return "soDienThoaiKhachHang";
+            case "loaidon":
+            case "loai_don":
+                return "loaiDon";
+            case "phivanchuyen":
+            case "phi_van_chuyen":
+                return "phiVanChuyen";
+            case "createdat":
+            case "created_at":
+                return "createdAt";
+            case "updatedat":
+            case "updated_at":
+                return "updatedAt";
+            case "id":
+                return "id";
+            default:
+                // If field name is not recognized, default to id to prevent errors
+                return "id";
+        }
     }
 
 }
