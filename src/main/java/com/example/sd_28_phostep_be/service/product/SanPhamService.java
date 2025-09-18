@@ -147,8 +147,10 @@ public class SanPhamService {
                    .tenKichCo(chiTiet.getIdKichCo().getTenKichCo());
         }
 
-        // Image info - get first image URL if available
-        if (chiTiet.getIdSanPham() != null && chiTiet.getIdSanPham().getIdAnhSanPham() != null) {
+        // Image info - get image from ChiTietSanPham first, then fallback to product image
+        if (chiTiet.getIdAnhSanPham() != null) {
+            builder.urlAnhSanPham(chiTiet.getIdAnhSanPham().getUrlAnh());
+        } else if (chiTiet.getIdSanPham() != null && chiTiet.getIdSanPham().getIdAnhSanPham() != null) {
             builder.urlAnhSanPham(chiTiet.getIdSanPham().getIdAnhSanPham().getUrlAnh());
         }
 
@@ -341,5 +343,80 @@ public class SanPhamService {
 
     public Page<SanPham> getProductsByCategoryName(String categoryName, Pageable pageable) {
         return sanPhamRepository.findProductsByCategoryName(categoryName, pageable);
+    }
+
+    /**
+     * Get products available for discount campaigns (only products with stock > 0)
+     * This method filters out products that have no variants with available stock
+     */
+    public Page<SanPhamResponse> getProductsAvailableForDiscount(Pageable pageable) {
+        Page<SanPham> sanPhamPage = sanPhamRepository.findProductsAvailableForDiscount(pageable);
+        
+        List<SanPhamResponse> sanPhamResponses = sanPhamPage.getContent().stream()
+                .map(this::convertToSanPhamResponseForDiscount)
+                .collect(Collectors.toList());
+        
+        return new PageImpl<>(sanPhamResponses, pageable, sanPhamPage.getTotalElements());
+    }
+
+    /**
+     * Convert SanPham entity to SanPhamResponse DTO for discount campaigns
+     * Only includes variants with stock > 0
+     */
+    private SanPhamResponse convertToSanPhamResponseForDiscount(SanPham sanPham) {
+        // Determine status based on deleted field (true = active, false = inactive)
+        Boolean trangThai = sanPham.getDeleted() == null || !sanPham.getDeleted();
+        
+        SanPhamResponse.SanPhamResponseBuilder builder = SanPhamResponse.builder()
+                .id(sanPham.getId())
+                .ma(sanPham.getMa())
+                .tenSanPham(sanPham.getTenSanPham())
+                .moTa(sanPham.getMoTaSanPham())
+                .quocGiaSanXuat(sanPham.getQuocGiaSanXuat())
+                .trangThai(trangThai)
+                .deleted(sanPham.getDeleted())
+                .ngayTao(sanPham.getNgayTao())
+                .ngayCapNhat(sanPham.getNgayCapNhat());
+
+        // Category info
+        if (sanPham.getIdDanhMuc() != null) {
+            builder.idDanhMuc(sanPham.getIdDanhMuc().getId())
+                   .tenDanhMuc(sanPham.getIdDanhMuc().getTenDanhMuc());
+        }
+
+        // Brand info
+        if (sanPham.getIdThuongHieu() != null) {
+            builder.idThuongHieu(sanPham.getIdThuongHieu().getId())
+                   .tenThuongHieu(sanPham.getIdThuongHieu().getTenThuongHieu());
+        }
+
+        // Material info
+        if (sanPham.getIdChatLieu() != null) {
+            builder.idChatLieu(sanPham.getIdChatLieu().getId())
+                   .tenChatLieu(sanPham.getIdChatLieu().getTenChatLieu());
+        }
+
+        // Sole info
+        if (sanPham.getIdDeGiay() != null) {
+            builder.idDeGiay(sanPham.getIdDeGiay().getId())
+                   .tenDeGiay(sanPham.getIdDeGiay().getTenDeGiay());
+        }
+
+        // Product variants - ONLY include variants with stock > 0
+        if (sanPham.getChiTietSanPhams() != null) {
+            List<ChiTietSanPhamResponse> chiTietResponses = sanPham.getChiTietSanPhams().stream()
+                    .filter(chiTiet -> chiTiet.getSoLuongTonKho() != null && chiTiet.getSoLuongTonKho() > 0) // Filter stock > 0
+                    .filter(chiTiet -> chiTiet.getDeleted() == null || !chiTiet.getDeleted()) // Filter active variants
+                    .map(this::convertToChiTietSanPhamResponse)
+                    .collect(Collectors.toList());
+            
+            builder.chiTietSanPhams(chiTietResponses)
+                   .totalVariants((long) chiTietResponses.size())
+                   .activeVariants(chiTietResponses.stream()
+                           .filter(ct -> ct.getTrangThai() != null && ct.getTrangThai())
+                           .count());
+        }
+
+        return builder.build();
     }
 }

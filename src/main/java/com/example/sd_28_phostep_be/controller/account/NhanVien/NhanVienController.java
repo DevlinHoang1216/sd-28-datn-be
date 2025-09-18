@@ -39,8 +39,10 @@ public class NhanVienController {
             @RequestParam(defaultValue = "desc") String sortDir) {
 
         try {
+            // Validate and map sortBy field to actual entity fields
+            String validSortBy = mapSortField(sortBy);
             Sort sort = sortDir.equalsIgnoreCase("desc") ? 
-                Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+                Sort.by(validSortBy).descending() : Sort.by(validSortBy).ascending();
             
             Pageable pageable = PageRequest.of(page, size, sort);
             
@@ -177,6 +179,46 @@ public class NhanVienController {
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("error", "Lỗi khi khôi phục nhân viên: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    /**
+     * Map frontend sort field names to actual entity field names
+     * This prevents errors when frontend sends invalid field names
+     */
+    private String mapSortField(String sortBy) {
+        if (sortBy == null || sortBy.trim().isEmpty()) {
+            return "id"; // Default sort field
+        }
+        
+        switch (sortBy.toLowerCase()) {
+            case "ngaytao":
+            case "ngay_tao":
+                return "createdAt"; // Map to correct field name
+            case "createdat":
+            case "created_at":
+                return "createdAt";
+            case "updatedat":
+            case "updated_at":
+                return "updatedAt";
+            case "tennhanvien":
+            case "ten_nhan_vien":
+                return "tenNhanVien";
+            case "ngaysinh":
+            case "ngay_sinh":
+                return "ngaySinh";
+            case "gioitinh":
+            case "gioi_tinh":
+                return "gioiTinh";
+            case "cccd":
+                return "cccd";
+            case "ma":
+                return "ma";
+            case "id":
+                return "id";
+            default:
+                // If field name is not recognized, default to id to prevent errors
+                return "id";
         }
     }
 }
