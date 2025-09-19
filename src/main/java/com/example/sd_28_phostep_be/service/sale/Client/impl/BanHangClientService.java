@@ -62,4 +62,9 @@ public interface BanHangClientService {
      * Get order details after payment
      */
     HoaDonDetailResponse getOrderDetails(Integer hoaDonId);
+    
+    /**
+     * Search order by order code (for guest users)
+     */
+    HoaDonDetailResponse searchOrderByCode(String orderCode);
 }

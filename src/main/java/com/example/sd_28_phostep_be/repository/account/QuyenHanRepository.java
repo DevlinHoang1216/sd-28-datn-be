@@ -10,4 +10,6 @@ import java.util.Optional;
 public interface QuyenHanRepository extends JpaRepository<QuyenHan, Integer> {
     
     Optional<QuyenHan> findByMa(String ma);
+    
+    Optional<QuyenHan> findByCapQuyenHan(Integer capQuyenHan);
 }
