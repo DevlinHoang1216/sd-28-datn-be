@@ -31,6 +31,10 @@ public class InHoaDonService {
 
     public byte[] generateHoaDonPdf(HoaDonDetailResponse hoaDon) throws Exception {
         logger.info("Starting to generate PDF for HoaDon: {}", hoaDon.getId());
+        if (hoaDon == null) {
+            logger.error("HoaDonDetailResponse is null");
+            throw new IllegalArgumentException("Hóa đơn không được null");
+        }
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
@@ -71,12 +75,16 @@ public class InHoaDonService {
                 }
                 parameters.put("hinhThucThanhToan", hinhThucThanhToanStr);
 
-                // Tính tổng tiền từ chi tiết sản phẩm
+                // Tính tổng tiền từ chi tiết sản phẩm (đơn giá * số lượng)
                 BigDecimal tongTien = BigDecimal.ZERO;
                 if (hoaDon.getSanPhamChiTietInfos() != null) {
                     tongTien = hoaDon.getSanPhamChiTietInfos().stream()
-                            .map(HoaDonDetailResponse.SanPhamChiTietInfo::getGiaBan)
-                            .filter(gia -> gia != null)
+                            .filter(sp -> sp.getGiaBan() != null)
+                            .map(sp -> {
+                                BigDecimal donGia = sp.getGiaBan();
+                                Integer soLuong = sp.getSoLuong() != null ? sp.getSoLuong() : 1;
+                                return donGia.multiply(BigDecimal.valueOf(soLuong));
+                            })
                             .reduce(BigDecimal.ZERO, BigDecimal::add);
                 }
                 parameters.put("tongTien", tongTien);
@@ -88,7 +96,7 @@ public class InHoaDonService {
                 BufferedImage logoQrImage = generateQRWithLogo(hoaDon.getMaHoaDon());
                 parameters.put("logoQrImage", logoQrImage);
 
-                // Chuẩn bị danh sách chi tiết sản phẩm cho JasperReports
+                // Chuẩn bị danh sách chi tiết sản phẩm cho JasperReports - Hệ thống bán giày
                 List<HoaDonChiTietDTO> chiTietListWithStt = new ArrayList<>();
                 if (hoaDon.getSanPhamChiTietInfos() != null && !hoaDon.getSanPhamChiTietInfos().isEmpty()) {
                     int stt = 1;
@@ -96,11 +104,16 @@ public class InHoaDonService {
                         HoaDonChiTietDTO chiTiet = new HoaDonChiTietDTO();
                         chiTiet.setStt(stt++);
                         chiTiet.setTenSanPham(sp.getTenSanPham() != null ? sp.getTenSanPham() : "N/A");
-                        chiTiet.setMauSac(sp.getMauSac() != null ? sp.getMauSac() : "N/A");
                         chiTiet.setKichCo(sp.getKichCo() != null ? sp.getKichCo() : "N/A");
-                        chiTiet.setSoLuong(1); // Mặc định là 1 vì chưa có field soLuong trong DTO
+                        chiTiet.setMauSac(sp.getMauSac() != null ? sp.getMauSac() : "N/A");
+                        chiTiet.setSoLuong(sp.getSoLuong() != null ? sp.getSoLuong() : 1);
                         chiTiet.setGia(sp.getGiaBan() != null ? sp.getGiaBan() : BigDecimal.ZERO);
-                        chiTiet.setThanhTien(sp.getGiaBan() != null ? sp.getGiaBan() : BigDecimal.ZERO);
+                        
+                        // Tính thành tiền = đơn giá * số lượng
+                        BigDecimal donGia = sp.getGiaBan() != null ? sp.getGiaBan() : BigDecimal.ZERO;
+                        Integer soLuong = sp.getSoLuong() != null ? sp.getSoLuong() : 1;
+                        chiTiet.setThanhTien(donGia.multiply(BigDecimal.valueOf(soLuong)));
+                        
                         chiTietListWithStt.add(chiTiet);
                     }
                 } else {
@@ -166,8 +179,15 @@ public class InHoaDonService {
             }
         }
 
-        ClassPathResource logoResource = new ClassPathResource("static/images/logo.png");
-        BufferedImage logoImage = ImageIO.read(logoResource.getInputStream());
+        ClassPathResource logoResource = new ClassPathResource("static/Pho-Step_logo.png");
+        BufferedImage logoImage;
+        try {
+            logoImage = ImageIO.read(logoResource.getInputStream());
+        } catch (Exception e) {
+            logger.warn("Cannot load logo file, creating QR without logo: {}", e.getMessage());
+            // Return QR without logo if logo file not found
+            return qrImage;
+        }
 
         BufferedImage circularLogo = new BufferedImage(logoSize, logoSize, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2dCircular = circularLogo.createGraphics();
@@ -190,12 +210,12 @@ public class InHoaDonService {
         return qrImage;
     }
 
-    // DTO cho JasperReports - Cửa hàng bán giày
+    // DTO cho JasperReports - Hệ thống bán giày PhoStep
     public static class HoaDonChiTietDTO {
         private Integer stt;
         private String tenSanPham;
-        private String mauSac;
         private String kichCo;
+        private String mauSac;
         private Integer soLuong;
         private BigDecimal gia;
         private BigDecimal thanhTien;
@@ -207,11 +227,11 @@ public class InHoaDonService {
         public String getTenSanPham() { return tenSanPham; }
         public void setTenSanPham(String tenSanPham) { this.tenSanPham = tenSanPham; }
         
-        public String getMauSac() { return mauSac; }
-        public void setMauSac(String mauSac) { this.mauSac = mauSac; }
-        
         public String getKichCo() { return kichCo; }
         public void setKichCo(String kichCo) { this.kichCo = kichCo; }
+        
+        public String getMauSac() { return mauSac; }
+        public void setMauSac(String mauSac) { this.mauSac = mauSac; }
         
         public Integer getSoLuong() { return soLuong; }
         public void setSoLuong(Integer soLuong) { this.soLuong = soLuong; }
