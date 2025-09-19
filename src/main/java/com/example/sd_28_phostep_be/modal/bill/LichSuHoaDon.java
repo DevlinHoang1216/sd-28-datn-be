@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Nationalized;
 
+import java.sql.Date;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 
@@ -39,7 +40,7 @@ public class LichSuHoaDon {
     private String hanhDong;
 
     @Column(name = "thoi_gian")
-    private Instant thoiGian;
+    private Date thoiGian;
 
     @Column(name = "deleted")
     private Short deleted;

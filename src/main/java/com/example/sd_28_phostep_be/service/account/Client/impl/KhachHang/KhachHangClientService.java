@@ -3,14 +3,18 @@ package com.example.sd_28_phostep_be.service.account.Client.impl.KhachHang;
 import com.example.sd_28_phostep_be.dto.account.request.KhachHang.DiaChiKhachHangRequest;
 import com.example.sd_28_phostep_be.dto.account.response.KhachHang.DiaChiKhachHangResponse;
 import com.example.sd_28_phostep_be.dto.account.response.KhachHang.KhachHangProfileResponse;
+import com.example.sd_28_phostep_be.dto.account.response.KhachHang.OrderHistoryResponse;
+import com.example.sd_28_phostep_be.dto.account.response.KhachHang.OrderItemResponse;
 import com.example.sd_28_phostep_be.dto.statistics.KhachHangOverviewResponse;
 import com.example.sd_28_phostep_be.modal.account.DiaChiKhachHang;
 import com.example.sd_28_phostep_be.modal.account.KhachHang;
 import com.example.sd_28_phostep_be.modal.account.TaiKhoan;
 import com.example.sd_28_phostep_be.modal.bill.HoaDon;
+import com.example.sd_28_phostep_be.modal.bill.HoaDonChiTiet;
 import com.example.sd_28_phostep_be.repository.account.DiaChiKhachHangRepository;
 import com.example.sd_28_phostep_be.repository.account.KhachHang.KhachHangRepository;
 import com.example.sd_28_phostep_be.repository.bill.HoaDonRepository;
+import com.example.sd_28_phostep_be.repository.bill.HoaDonChiTietRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,8 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -35,6 +38,9 @@ public class KhachHangClientService {
 
     @Autowired
     private HoaDonRepository hoaDonRepository;
+
+    @Autowired
+    private HoaDonChiTietRepository hoaDonChiTietRepository;
 
 
     /**
@@ -303,15 +309,84 @@ public class KhachHangClientService {
     /**
      * Get customer order history
      */
-    public Page<HoaDon> getCustomerOrderHistory(TaiKhoan taiKhoan, Pageable pageable) {
+    public Page<OrderHistoryResponse> getCustomerOrderHistory(TaiKhoan taiKhoan, Pageable pageable) {
         Optional<KhachHang> khachHangOpt = khachHangRepository.findByTaiKhoan(taiKhoan);
         
+        // If not found by TaiKhoan object, try to find by taiKhoan ID directly
         if (khachHangOpt.isEmpty()) {
-            throw new RuntimeException("Không tìm thấy thông tin khách hàng");
+            khachHangOpt = khachHangRepository.findByTaiKhoanId(taiKhoan.getId());
+        }
+        
+        if (khachHangOpt.isEmpty()) {
+            throw new RuntimeException("Không tìm thấy thông tin khách hàng với tài khoản ID: " + taiKhoan.getId());
         }
         
         KhachHang khachHang = khachHangOpt.get();
-        return hoaDonRepository.findByIdKhachHangOrderByCreatedAtDesc(khachHang, pageable);
+        System.out.println("=== Customer Order History Debug ===");
+        System.out.println("Found customer: " + khachHang.getTen() + " (ID: " + khachHang.getId() + ")");
+        
+        Page<HoaDon> orders = hoaDonRepository.findByIdKhachHangOrderByCreatedAtDesc(khachHang, pageable);
+        System.out.println("Found " + orders.getTotalElements() + " orders in history");
+        
+        // Convert HoaDon entities to DTOs to avoid circular reference
+        Page<OrderHistoryResponse> orderDTOs = orders.map(order -> {
+            // Load order items for each order
+            List<HoaDonChiTiet> orderDetails = hoaDonChiTietRepository.findByHoaDonId(order.getId());
+            List<OrderItemResponse> items = orderDetails.stream().map(detail -> {
+                // Extract product information from ChiTietSanPham
+                String tenSanPham = detail.getIdChiTietSp() != null && detail.getIdChiTietSp().getIdSanPham() != null 
+                    ? detail.getIdChiTietSp().getIdSanPham().getTenSanPham() : "Sản phẩm không xác định";
+                String maSanPham = detail.getIdChiTietSp() != null && detail.getIdChiTietSp().getIdSanPham() != null 
+                    ? detail.getIdChiTietSp().getIdSanPham().getMa() : "";
+                String anhSanPham = detail.getIdChiTietSp() != null && detail.getIdChiTietSp().getIdAnhSanPham() != null 
+                    ? detail.getIdChiTietSp().getIdAnhSanPham().getUrlAnh() : "/images/default-product.jpg";
+                String mauSac = detail.getIdChiTietSp() != null && detail.getIdChiTietSp().getIdMauSac() != null 
+                    ? detail.getIdChiTietSp().getIdMauSac().getTenMauSac() : "";
+                String kichCo = detail.getIdChiTietSp() != null && detail.getIdChiTietSp().getIdKichCo() != null 
+                    ? detail.getIdChiTietSp().getIdKichCo().getTenKichCo() : "";
+                String chatLieu = ""; // ChatLieu not available in current entity structure
+                String thuongHieu = detail.getIdChiTietSp() != null && detail.getIdChiTietSp().getIdSanPham() != null 
+                    && detail.getIdChiTietSp().getIdSanPham().getIdThuongHieu() != null
+                    ? detail.getIdChiTietSp().getIdSanPham().getIdThuongHieu().getTenThuongHieu() : "";
+                String moTa = ""; // Description not available in current structure
+
+                return new OrderItemResponse(
+                    detail.getId(),
+                    tenSanPham,
+                    maSanPham,
+                    anhSanPham,
+                    mauSac,
+                    kichCo,
+                    chatLieu,
+                    thuongHieu,
+                    detail.getSoLuong(),
+                    detail.getGia(), // Use getGia() instead of getGiaBan()
+                    detail.getGia().multiply(BigDecimal.valueOf(detail.getSoLuong())), // Calculate thanhTien
+                    moTa
+                );
+            }).collect(Collectors.toList());
+
+            return new OrderHistoryResponse(
+                order.getId(),
+                order.getMa(),
+                order.getTenKhachHang(),
+                order.getSoDienThoaiKhachHang(),
+                order.getDiaChiKhachHang(),
+                order.getEmail(),
+                order.getTongTien(),
+                order.getTongTienSauGiam(),
+                order.getTrangThai(),
+                order.getNgayTao(),
+                order.getNgayThanhToan(),
+                order.getLoaiDon(),
+                order.getPhiVanChuyen(),
+                order.getGhiChu(),
+                null, // maVanDon - not available in HoaDon entity
+                items // Add the loaded items
+            );
+        });
+        
+        return orderDTOs;
     }
 
     /**
@@ -320,14 +395,30 @@ public class KhachHangClientService {
     public KhachHangOverviewResponse getCustomerOverview(TaiKhoan taiKhoan) {
         Optional<KhachHang> khachHangOpt = khachHangRepository.findByTaiKhoan(taiKhoan);
         
+        // If not found by TaiKhoan object, try to find by taiKhoan ID directly
         if (khachHangOpt.isEmpty()) {
-            throw new RuntimeException("Không tìm thấy thông tin khách hàng");
+            khachHangOpt = khachHangRepository.findByTaiKhoanId(taiKhoan.getId());
+        }
+        
+        if (khachHangOpt.isEmpty()) {
+            throw new RuntimeException("Không tìm thấy thông tin khách hàng với tài khoản ID: " + taiKhoan.getId());
         }
         
         KhachHang khachHang = khachHangOpt.get();
+        System.out.println("=== Customer Overview Debug ===");
+        System.out.println("Found customer: " + khachHang.getTen() + " (ID: " + khachHang.getId() + ")");
         
         // Get order statistics
         List<HoaDon> allOrders = hoaDonRepository.findByIdKhachHang(khachHang);
+        System.out.println("Found " + allOrders.size() + " orders for customer");
+        
+        // Debug: Check all orders including deleted ones
+        List<HoaDon> allOrdersIncludingDeleted = hoaDonRepository.findAllByIdKhachHangIncludingDeleted(khachHang);
+        System.out.println("Total orders (including deleted): " + allOrdersIncludingDeleted.size());
+        
+        for (HoaDon order : allOrdersIncludingDeleted) {
+            System.out.println("Order: " + order.getMa() + ", Status: " + order.getTrangThai() + ", Deleted: " + order.getDeleted() + ", Total: " + order.getTongTienSauGiam());
+        }
         
         long totalOrders = allOrders.size();
         long completedOrders = allOrders.stream().filter(order -> order.getTrangThai() == 5).count();
@@ -374,6 +465,91 @@ public class KhachHangClientService {
         response.setLastOrderAmount(lastOrderAmount);
         
         return response;
+    }
+
+    /**
+     * Get customer order details with items
+     */
+    public Map<String, Object> getCustomerOrderDetails(TaiKhoan taiKhoan, String orderId) {
+        Optional<KhachHang> khachHangOpt = khachHangRepository.findByTaiKhoan(taiKhoan);
+        
+        // If not found by TaiKhoan object, try to find by taiKhoan ID directly
+        if (khachHangOpt.isEmpty()) {
+            khachHangOpt = khachHangRepository.findByTaiKhoanId(taiKhoan.getId());
+        }
+        
+        if (khachHangOpt.isEmpty()) {
+            throw new RuntimeException("Không tìm thấy thông tin khách hàng với tài khoản ID: " + taiKhoan.getId());
+        }
+        
+        KhachHang khachHang = khachHangOpt.get();
+        
+        // Find order by order code and customer
+        Optional<HoaDon> orderOpt = hoaDonRepository.findByMaAndIdKhachHang(orderId, khachHang);
+        
+        if (orderOpt.isEmpty()) {
+            throw new RuntimeException("Không tìm thấy đơn hàng với mã: " + orderId);
+        }
+        
+        HoaDon order = orderOpt.get();
+        
+        // TODO: Get order items from HoaDonChiTiet
+        // For now, return basic order info
+        Map<String, Object> orderDetails = new HashMap<>();
+        orderDetails.put("order", order);
+        orderDetails.put("items", new ArrayList<>()); // Will be populated with actual items
+        
+        return orderDetails;
+    }
+
+    /**
+     * Debug method to check customer orders
+     */
+    public Map<String, Object> debugCustomerOrders(TaiKhoan taiKhoan) {
+        Map<String, Object> debugInfo = new HashMap<>();
+        
+        try {
+            Optional<KhachHang> khachHangOpt = khachHangRepository.findByTaiKhoan(taiKhoan);
+            
+            if (khachHangOpt.isEmpty()) {
+                khachHangOpt = khachHangRepository.findByTaiKhoanId(taiKhoan.getId());
+            }
+            
+            if (khachHangOpt.isEmpty()) {
+                debugInfo.put("error", "Không tìm thấy khách hàng với tài khoản ID: " + taiKhoan.getId());
+                return debugInfo;
+            }
+            
+            KhachHang khachHang = khachHangOpt.get();
+            debugInfo.put("customer", Map.of(
+                "id", khachHang.getId(),
+                "name", khachHang.getTen(),
+                "code", khachHang.getMa(),
+                "accountId", taiKhoan.getId()
+            ));
+            
+            // Get all orders
+            List<HoaDon> allOrders = hoaDonRepository.findAllByIdKhachHangIncludingDeleted(khachHang);
+            debugInfo.put("totalOrders", allOrders.size());
+            
+            List<Map<String, Object>> orderDetails = new ArrayList<>();
+            for (HoaDon order : allOrders) {
+                Map<String, Object> orderInfo = new HashMap<>();
+                orderInfo.put("ma", order.getMa());
+                orderInfo.put("trangThai", order.getTrangThai());
+                orderInfo.put("deleted", order.getDeleted());
+                orderInfo.put("tongTien", order.getTongTienSauGiam());
+                orderInfo.put("ngayTao", order.getNgayTao());
+                orderInfo.put("customerId", order.getIdKhachHang() != null ? order.getIdKhachHang().getId() : null);
+                orderDetails.add(orderInfo);
+            }
+            debugInfo.put("orders", orderDetails);
+            
+        } catch (Exception e) {
+            debugInfo.put("error", "Exception: " + e.getMessage());
+        }
+        
+        return debugInfo;
     }
 
     private String generateAddressCode(Integer khachHangId) {

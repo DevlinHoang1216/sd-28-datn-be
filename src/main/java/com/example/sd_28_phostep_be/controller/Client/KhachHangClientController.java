@@ -3,9 +3,9 @@ package com.example.sd_28_phostep_be.controller.Client;
 import com.example.sd_28_phostep_be.dto.account.request.KhachHang.DiaChiKhachHangRequest;
 import com.example.sd_28_phostep_be.dto.account.response.KhachHang.DiaChiKhachHangResponse;
 import com.example.sd_28_phostep_be.dto.account.response.KhachHang.KhachHangProfileResponse;
+import com.example.sd_28_phostep_be.dto.account.response.KhachHang.OrderHistoryResponse;
 import com.example.sd_28_phostep_be.dto.statistics.KhachHangOverviewResponse;
 import com.example.sd_28_phostep_be.modal.account.TaiKhoan;
-import com.example.sd_28_phostep_be.modal.bill.HoaDon;
 import com.example.sd_28_phostep_be.service.account.Client.impl.KhachHang.KhachHangClientService;
 import com.example.sd_28_phostep_be.repository.account.TaiKhoanRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -115,7 +115,7 @@ public class KhachHangClientController {
             }
             
             Pageable pageable = PageRequest.of(page, size);
-            Page<HoaDon> orders = khachHangClientService.getCustomerOrderHistory(taiKhoanOpt.get(), pageable);
+            Page<OrderHistoryResponse> orders = khachHangClientService.getCustomerOrderHistory(taiKhoanOpt.get(), pageable);
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
@@ -127,6 +127,71 @@ public class KhachHangClientController {
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("success", false);
             errorResponse.put("message", "Lỗi khi lấy lịch sử đơn hàng: " + e.getMessage());
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    /**
+     * Get customer order details by order ID
+     */
+    @GetMapping("/orders/{orderId}")
+    public ResponseEntity<?> getCustomerOrderDetails(
+            @RequestParam Integer taiKhoanId,
+            @PathVariable String orderId) {
+        try {
+            Optional<TaiKhoan> taiKhoanOpt = taiKhoanRepository.findById(taiKhoanId);
+            if (taiKhoanOpt.isEmpty()) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("success", false);
+                errorResponse.put("message", "Không tìm thấy tài khoản");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+            }
+            
+            // Get order details with items
+            Map<String, Object> orderDetails = khachHangClientService.getCustomerOrderDetails(taiKhoanOpt.get(), orderId);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Lấy chi tiết đơn hàng thành công");
+            response.put("data", orderDetails);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Lỗi khi lấy chi tiết đơn hàng: " + e.getMessage());
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    /**
+     * Debug endpoint to check customer orders
+     */
+    @GetMapping("/debug/orders")
+    public ResponseEntity<?> debugCustomerOrders(@RequestParam Integer taiKhoanId) {
+        try {
+            Optional<TaiKhoan> taiKhoanOpt = taiKhoanRepository.findById(taiKhoanId);
+            if (taiKhoanOpt.isEmpty()) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("success", false);
+                errorResponse.put("message", "Không tìm thấy tài khoản");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+            }
+            
+            Map<String, Object> debugInfo = khachHangClientService.debugCustomerOrders(taiKhoanOpt.get());
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Debug thông tin khách hàng");
+            response.put("data", debugInfo);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Lỗi debug: " + e.getMessage());
             
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }

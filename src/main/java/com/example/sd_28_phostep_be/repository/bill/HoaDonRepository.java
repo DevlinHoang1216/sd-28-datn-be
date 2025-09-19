@@ -88,6 +88,10 @@ public interface HoaDonRepository extends JpaRepository<HoaDon, Integer> {
     @Query("SELECT hd FROM HoaDon hd WHERE hd.ma = :ma")
     Optional<HoaDon> findByMa(@Param("ma") String ma);
     
+    // Tìm hóa đơn theo mã và khách hàng
+    @Query("SELECT hd FROM HoaDon hd WHERE hd.ma = :ma AND hd.idKhachHang = :khachHang")
+    Optional<HoaDon> findByMaAndIdKhachHang(@Param("ma") String ma, @Param("khachHang") com.example.sd_28_phostep_be.modal.account.KhachHang khachHang);
+    
     // Get pending invoices for sales counter (status = 0, deleted = true)
     @Query("SELECT hd FROM HoaDon hd LEFT JOIN FETCH hd.idKhachHang WHERE hd.trangThai = 0 AND hd.deleted = true")
     List<HoaDon> findPendingInvoicesForSales();
@@ -187,18 +191,17 @@ public interface HoaDonRepository extends JpaRepository<HoaDon, Integer> {
         """)
     List<Object[]> getRecentOrders();
 
-    // Customer order history queries
+    // Customer order history queries - Include all orders (both deleted and non-deleted for customer view)
     @Query("SELECT h FROM HoaDon h WHERE h.idKhachHang = :khachHang ORDER BY h.createdAt DESC")
     Page<HoaDon> findByIdKhachHangOrderByCreatedAtDesc(@Param("khachHang") com.example.sd_28_phostep_be.modal.account.KhachHang khachHang, Pageable pageable);
 
     @Query("SELECT h FROM HoaDon h WHERE h.idKhachHang = :khachHang")
     List<HoaDon> findByIdKhachHang(@Param("khachHang") com.example.sd_28_phostep_be.modal.account.KhachHang khachHang);
     
-    // Find pending online invoice by customer
-    @Query("SELECT h FROM HoaDon h WHERE h.idKhachHang.id = :customerId AND h.trangThai = 0 AND h.loaiDon = 'Online' AND h.deleted = false")
-    HoaDon findPendingOnlineInvoiceByCustomer(@Param("customerId") Integer customerId);
-    
-    // Find pending online invoice by session (stored in ghiChu field temporarily)
-    @Query("SELECT h FROM HoaDon h WHERE h.ghiChu = :sessionId AND h.trangThai = 0 AND h.loaiDon = 'Online' AND h.deleted = false AND h.idKhachHang.id = 1")
-    HoaDon findPendingOnlineInvoiceBySession(@Param("sessionId") String sessionId);
+    // Debug query to check all orders for customer including deleted ones
+    @Query("SELECT h FROM HoaDon h WHERE h.idKhachHang = :khachHang ORDER BY h.createdAt DESC")
+    List<HoaDon> findAllByIdKhachHangIncludingDeleted(@Param("khachHang") com.example.sd_28_phostep_be.modal.account.KhachHang khachHang);
+
+    @Query("SELECT h FROM HoaDon h WHERE h.idKhachHang.id = :khachHangId AND h.trangThai = :trangThai")
+    List<HoaDon> findByIdKhachHangAndTrangThai(@Param("khachHangId") Integer khachHangId, @Param("trangThai") short trangThai);
 }

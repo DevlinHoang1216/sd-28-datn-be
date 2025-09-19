@@ -88,7 +88,7 @@ public class HoaDon {
     private Date ngayTao;
 
     @Column(name = "ngay_thanh_toan")
-    private OffsetDateTime ngayThanhToan;
+    private Date ngayThanhToan;
 
     @ColumnDefault("1")
     @Column(name = "trang_thai", columnDefinition = "tinyint not null")
@@ -99,13 +99,13 @@ public class HoaDon {
 
     @ColumnDefault("getdate()")
     @Column(name = "created_at", nullable = false)
-    private Instant createdAt;
+    private Date createdAt;
 
     @Column(name = "created_by")
     private Integer createdBy;
 
     @Column(name = "updated_at")
-    private Instant updatedAt;
+    private Date updatedAt;
 
     @Column(name = "updated_by")
     private Integer updatedBy;
