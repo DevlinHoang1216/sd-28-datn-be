@@ -26,7 +26,7 @@ public class HoaDonDetailResponse {
     private BigDecimal tienGiam;
     private Double phanTramGiam;
     private Date ngayTao;
-    private OffsetDateTime ngayThanhToan;
+    private Date ngayThanhToan;
     private String tenKhachHang;
     private String soDienThoaiKhachHang;
     private String diaChiKhachHang;
@@ -111,7 +111,7 @@ public class HoaDonDetailResponse {
     public static class LichSuHoaDonInfo {
         private String ma;
         private String hanhDong;
-        private Instant thoiGian;
+        private Date thoiGian;  // Changed from Instant to Date to match entity
         private String tenNhanVien;
         private Integer idHoaDon;
         private Short trangThai;

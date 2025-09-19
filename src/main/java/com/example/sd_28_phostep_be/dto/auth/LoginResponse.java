@@ -15,6 +15,8 @@ public class LoginResponse {
     private String soDienThoai;
     private String tenQuyen;
     private Integer capQuyenHan;
+    private Integer customerId; // ID khách hàng (chỉ có khi role = 3)
+    private String tenKhachHang; // Tên khách hàng (chỉ có khi role = 3)
     private boolean success;
     private String message;
     

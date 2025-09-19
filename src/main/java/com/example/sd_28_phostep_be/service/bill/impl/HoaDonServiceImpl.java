@@ -199,7 +199,7 @@ public class HoaDonServiceImpl implements HoaDonService {
         }
         lichSuHoaDon.setHanhDong(hanhDong);
         
-        lichSuHoaDon.setThoiGian(Instant.now());
+        lichSuHoaDon.setThoiGian(new java.sql.Date(System.currentTimeMillis()));
         lichSuHoaDon.setIdNhanVien(idNhanVien != null ?
                 nhanVienRepository.findById(idNhanVien)
                         .orElseThrow(() -> new RuntimeException("Nhân viên không tồn tại"))
@@ -251,7 +251,7 @@ public class HoaDonServiceImpl implements HoaDonService {
         // Set default values for pending invoice
         newInvoice.setTrangThai((short) 0); // Status = 0 (pending for sales counter)
         newInvoice.setDeleted(true); // Set deleted = 1 for pending invoices
-        newInvoice.setCreatedAt(Instant.now());
+        newInvoice.setCreatedAt(new Date(System.currentTimeMillis()));
         newInvoice.setNgayTao(Date.valueOf(LocalDate.now()));
         
         // Set default amounts
@@ -325,7 +325,7 @@ public class HoaDonServiceImpl implements HoaDonService {
         }
         
         // Update timestamp
-        invoice.setUpdatedAt(Instant.now());
+        invoice.setUpdatedAt(new java.sql.Date(System.currentTimeMillis()));
         
         // Save invoice first
         HoaDon savedInvoice = hoaDonRepository.save(invoice);
@@ -441,7 +441,7 @@ public class HoaDonServiceImpl implements HoaDonService {
             hoaDon.setPhiVanChuyen(paymentRequest.getPhiVanChuyen());
             hoaDon.setTongTien(paymentRequest.getTongTien()); // Original total before discount
             hoaDon.setTongTienSauGiam(tongTienSauGiam); // Total after discount
-            hoaDon.setUpdatedAt(Instant.now());
+            hoaDon.setUpdatedAt(new java.sql.Date(System.currentTimeMillis()));
 
             // Set employee
             hoaDon.setIdNhanVien(nhanVienRepository.findById(paymentRequest.getNhanVienId())
@@ -506,7 +506,7 @@ public class HoaDonServiceImpl implements HoaDonService {
             // 7. Create payment history record (LichSuHoaDon)
             LichSuHoaDon lichSuHoaDon = new LichSuHoaDon();
             lichSuHoaDon.setHanhDong("Thanh toán thành công - " + paymentRequest.getPhuongThucThanhToan());
-            lichSuHoaDon.setThoiGian(Instant.now());
+            lichSuHoaDon.setThoiGian(new java.sql.Date(System.currentTimeMillis()));
             lichSuHoaDon.setIdNhanVien(nhanVienRepository.findById(paymentRequest.getNhanVienId()).orElse(null));
             lichSuHoaDon.setIdHoaDon(hoaDon);
             lichSuHoaDon.setDeleted((short) 5); // Status = 5 (completed)
@@ -549,7 +549,7 @@ public class HoaDonServiceImpl implements HoaDonService {
                 // 1. Update invoice status to completed
                 hoaDon.setTrangThai((short) 5); // Đã hoàn thành
                 hoaDon.setDeleted(false); // Mark as active invoice
-                hoaDon.setUpdatedAt(Instant.now());
+                hoaDon.setUpdatedAt(new java.sql.Date(System.currentTimeMillis()));
 
                 // 2. Create invoice details (HoaDonChiTiet) from cart data
                 Optional<GioHang> gioHangOpt = gioHangRepository.findByHoaDonId(hoaDon.getId());
@@ -606,7 +606,7 @@ public class HoaDonServiceImpl implements HoaDonService {
             } else {
                 // Payment failed - update status to cancelled
                 hoaDon.setTrangThai((short) 4); // Đã hủy
-                hoaDon.setUpdatedAt(Instant.now());
+                hoaDon.setUpdatedAt(new java.sql.Date(System.currentTimeMillis()));
             }
 
             hoaDonRepository.save(hoaDon);
@@ -628,7 +628,7 @@ public class HoaDonServiceImpl implements HoaDonService {
                 // 1. Update invoice status to completed
                 hoaDon.setTrangThai((short) 5); // Đã hoàn thành
                 hoaDon.setDeleted(false); // Mark as active invoice
-                hoaDon.setUpdatedAt(Instant.now());
+                hoaDon.setUpdatedAt(new java.sql.Date(System.currentTimeMillis()));
 
                 // 2. Create invoice details (HoaDonChiTiet) from cart data
                 Optional<GioHang> gioHangOpt = gioHangRepository.findByHoaDonId(hoaDon.getId());
@@ -681,7 +681,7 @@ public class HoaDonServiceImpl implements HoaDonService {
             } else {
                 // Payment failed - update status to cancelled
                 hoaDon.setTrangThai((short) 4); // Đã hủy
-                hoaDon.setUpdatedAt(Instant.now());
+                hoaDon.setUpdatedAt(new java.sql.Date(System.currentTimeMillis()));
             }
 
             hoaDonRepository.save(hoaDon);

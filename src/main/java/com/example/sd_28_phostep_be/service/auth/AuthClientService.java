@@ -69,6 +69,7 @@ public class AuthClientService {
             }
 
             // Nếu là khách hàng (capQuyenHan = 3), kiểm tra trạng thái khách hàng
+            KhachHang khachHang = null;
             if (capQuyenHan == 3) {
                 Optional<KhachHang> khachHangOpt = khachHangRepository.findByTaiKhoan(taiKhoan);
 
@@ -76,7 +77,7 @@ public class AuthClientService {
                     return new LoginResponse(false, "Không tìm thấy thông tin khách hàng");
                 }
 
-                KhachHang khachHang = khachHangOpt.get();
+                khachHang = khachHangOpt.get();
 
                 // Kiểm tra khách hàng có hoạt động không (deleted = true thì cho đăng nhập, deleted = false thì không cho)
                 if (khachHang.getDeleted() == null || !khachHang.getDeleted()) {
@@ -99,6 +100,12 @@ public class AuthClientService {
             // Thông tin quyền hạn
             response.setTenQuyen(taiKhoan.getIdQuyenHan().getMa());
             response.setCapQuyenHan(capQuyenHan);
+            
+            // Nếu là khách hàng, thêm customer ID
+            if (khachHang != null) {
+                response.setCustomerId(khachHang.getId());
+                response.setTenKhachHang(khachHang.getTen());
+            }
 
             response.setSuccess(true);
             response.setMessage("Đăng nhập thành công");
