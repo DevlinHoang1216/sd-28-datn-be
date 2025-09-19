@@ -92,9 +92,13 @@ public class InHoaDonService {
                 parameters.put("tienGiam", hoaDon.getTienGiam() != null ? hoaDon.getTienGiam() : BigDecimal.ZERO);
                 parameters.put("phanTramGiam", hoaDon.getPhanTramGiam() != null ? hoaDon.getPhanTramGiam() : 0.0);
 
-                // Tạo mã QR với logo
-                BufferedImage logoQrImage = generateQRWithLogo(hoaDon.getMaHoaDon());
-                parameters.put("logoQrImage", logoQrImage);
+                // Tạo mã QR đơn giản (không có logo)
+                BufferedImage qrImage = generateSimpleQR(hoaDon.getMaHoaDon());
+                parameters.put("logoQrImage", qrImage);
+                
+                // Tạo logo riêng biệt
+                BufferedImage logoImage = loadLogo();
+                parameters.put("logoImage", logoImage);
 
                 // Chuẩn bị danh sách chi tiết sản phẩm cho JasperReports - Hệ thống bán giày
                 List<HoaDonChiTietDTO> chiTietListWithStt = new ArrayList<>();
@@ -137,6 +141,71 @@ public class InHoaDonService {
             } catch (Exception e) {
                 logger.error("Lỗi khi đóng ByteArrayOutputStream: {}", e.getMessage());
             }
+        }
+    }
+
+    private BufferedImage generateSimpleQR(String maHoaDon) throws Exception {
+        String qrCodeText = maHoaDon != null ? maHoaDon : "N/A";
+        int qrSize = 200;
+        QRCodeWriter qrCodeWriter = new QRCodeWriter();
+
+        Map<EncodeHintType, Object> hints = new HashMap<>();
+        hints.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.M);
+        hints.put(EncodeHintType.MARGIN, 2);
+        hints.put(EncodeHintType.CHARACTER_SET, "UTF-8");
+
+        BitMatrix bitMatrix = qrCodeWriter.encode(qrCodeText, BarcodeFormat.QR_CODE, qrSize, qrSize, hints);
+
+        BufferedImage qrImage = new BufferedImage(qrSize, qrSize, BufferedImage.TYPE_INT_ARGB);
+        for (int x = 0; x < qrSize; x++) {
+            for (int y = 0; y < qrSize; y++) {
+                qrImage.setRGB(x, y, bitMatrix.get(x, y) ? Color.BLACK.getRGB() : Color.WHITE.getRGB());
+            }
+        }
+
+        logger.info("Generated simple QR code for maHoaDon: {}", qrCodeText);
+        return qrImage;
+    }
+
+    private BufferedImage loadLogo() throws Exception {
+        ClassPathResource logoResource = new ClassPathResource("static/Pho-Step_logo.png");
+        try {
+            BufferedImage originalLogo = ImageIO.read(logoResource.getInputStream());
+            
+            // Giữ nguyên tỷ lệ khung hình của logo
+            int originalWidth = originalLogo.getWidth();
+            int originalHeight = originalLogo.getHeight();
+            
+            // Tính toán kích thước mới giữ nguyên tỷ lệ
+            int targetHeight = 60; // Chiều cao mục tiêu
+            int targetWidth = (originalWidth * targetHeight) / originalHeight;
+            
+            // Nếu width quá lớn, giới hạn width và tính lại height
+            if (targetWidth > 80) {
+                targetWidth = 80;
+                targetHeight = (originalHeight * targetWidth) / originalWidth;
+            }
+            
+            BufferedImage resizedLogo = new BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g2d = resizedLogo.createGraphics();
+            g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2d.drawImage(originalLogo, 0, 0, targetWidth, targetHeight, null);
+            g2d.dispose();
+            
+            logger.info("Loaded and resized logo successfully: {}x{}", targetWidth, targetHeight);
+            return resizedLogo;
+        } catch (Exception e) {
+            logger.warn("Cannot load logo file: {}", e.getMessage());
+            // Return a simple placeholder if logo not found
+            BufferedImage placeholder = new BufferedImage(60, 60, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g2d = placeholder.createGraphics();
+            g2d.setColor(Color.LIGHT_GRAY);
+            g2d.fillRect(0, 0, 60, 60);
+            g2d.setColor(Color.BLACK);
+            g2d.drawString("LOGO", 20, 35);
+            g2d.dispose();
+            return placeholder;
         }
     }
 
