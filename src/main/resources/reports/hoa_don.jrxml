@@ -12,6 +12,7 @@
 	<parameter name="tienGiam" class="java.math.BigDecimal"/>
 	<parameter name="phanTramGiam" class="java.lang.Double"/>
 	<parameter name="logoQrImage" class="java.awt.Image"/>
+	<parameter name="logoImage" class="java.awt.Image"/>
 	<parameter name="hinhThucThanhToan" class="java.lang.String"/>
 
 	<!-- Preserved Fields -->
@@ -34,6 +35,11 @@
 				</textElement>
 				<text><![CDATA[HÓA ĐƠN BÁN HÀNG]]></text>
 			</staticText>
+			<!-- Logo ở góc phải trên -->
+			<image scaleImage="RetainShape">
+				<reportElement x="460" y="5" width="80" height="60"/>
+				<imageExpression><![CDATA[$P{logoImage}]]></imageExpression>
+			</image>
 			<staticText>
 				<reportElement x="20" y="40" width="515" height="20"/>
 				<textElement textAlignment="Center" verticalAlignment="Middle">

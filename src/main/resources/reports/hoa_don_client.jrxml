@@ -2,6 +2,7 @@
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="hoa_don_client" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
     <!-- Preserved Parameters -->
     <parameter name="logoQrImage" class="java.awt.Image"/>
+    <parameter name="logoImage" class="java.awt.Image"/>
     <parameter name="tenKhachHang" class="java.lang.String"/>
     <parameter name="soDienThoai" class="java.lang.String"/>
     <parameter name="diaChi" class="java.lang.String"/>
@@ -34,6 +35,11 @@
                 </textElement>
                 <text><![CDATA[HÓA ĐƠN GIAO HÀNG]]></text>
             </staticText>
+            <!-- Logo ở góc phải trên -->
+            <image scaleImage="RetainShape">
+                <reportElement x="460" y="5" width="80" height="60"/>
+                <imageExpression><![CDATA[$P{logoImage}]]></imageExpression>
+            </image>
             <staticText>
                 <reportElement x="0" y="30" width="555" height="20"/>
                 <textElement textAlignment="Center" verticalAlignment="Middle">
