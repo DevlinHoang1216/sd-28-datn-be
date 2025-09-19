@@ -2,15 +2,23 @@ package com.example.sd_28_phostep_be.service.auth;
 
 import com.example.sd_28_phostep_be.dto.auth.LoginRequest;
 import com.example.sd_28_phostep_be.dto.auth.LoginResponse;
+import com.example.sd_28_phostep_be.dto.auth.RegisterRequest;
+import com.example.sd_28_phostep_be.dto.auth.RegisterResponse;
 import com.example.sd_28_phostep_be.modal.account.KhachHang;
 import com.example.sd_28_phostep_be.modal.account.NhanVien;
 import com.example.sd_28_phostep_be.modal.account.TaiKhoan;
+import com.example.sd_28_phostep_be.modal.account.QuyenHan;
 import com.example.sd_28_phostep_be.repository.account.KhachHang.KhachHangRepository;
 import com.example.sd_28_phostep_be.repository.account.NhanVien.NhanVienRepository;
 import com.example.sd_28_phostep_be.repository.account.TaiKhoanRepository;
+import com.example.sd_28_phostep_be.repository.account.QuyenHanRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Date;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Optional;
 
 @Service
@@ -23,6 +31,9 @@ public class AuthClientService {
 
     @Autowired
     private KhachHangRepository khachHangRepository;
+
+    @Autowired
+    private QuyenHanRepository quyenHanRepository;
 
     public LoginResponse login(LoginRequest loginRequest) {
         try {
@@ -135,6 +146,90 @@ public class AuthClientService {
 
         } catch (Exception e) {
             return new LoginResponse(true, "Đăng xuất thành công"); // Vẫn trả về success dù có lỗi
+        }
+    }
+
+    @Transactional
+    public RegisterResponse register(RegisterRequest registerRequest) {
+        try {
+            // Validate input
+            if (registerRequest.getName() == null || registerRequest.getName().trim().isEmpty()) {
+                return RegisterResponse.error("Tên không được để trống");
+            }
+            if (registerRequest.getEmail() == null || registerRequest.getEmail().trim().isEmpty()) {
+                return RegisterResponse.error("Email không được để trống");
+            }
+            if (registerRequest.getPhoneNumber() == null || registerRequest.getPhoneNumber().trim().isEmpty()) {
+                return RegisterResponse.error("Số điện thoại không được để trống");
+            }
+            if (registerRequest.getPassword() == null || registerRequest.getPassword().trim().isEmpty()) {
+                return RegisterResponse.error("Mật khẩu không được để trống");
+            }
+            if (registerRequest.getPassword().length() < 6) {
+                return RegisterResponse.error("Mật khẩu phải có ít nhất 6 ký tự");
+            }
+
+            // Check if email already exists
+            Optional<TaiKhoan> existingAccount = taiKhoanRepository.findByEmail(registerRequest.getEmail());
+            if (existingAccount.isPresent()) {
+                return RegisterResponse.error("Email đã được sử dụng");
+            }
+
+            // Check if phone number already exists
+            Optional<KhachHang> existingCustomer = khachHangRepository.findBySoDienThoai(registerRequest.getPhoneNumber());
+            if (existingCustomer.isPresent()) {
+                return RegisterResponse.error("Số điện thoại đã được sử dụng");
+            }
+
+            // Get customer role (capQuyenHan = 3)
+            Optional<QuyenHan> customerRole = quyenHanRepository.findByCapQuyenHan(3);
+            if (!customerRole.isPresent()) {
+                return RegisterResponse.error("Không tìm thấy quyền khách hàng trong hệ thống");
+            }
+
+            // Generate account code
+            String accountCode = "TK" + System.currentTimeMillis();
+            
+            // Generate username from email (part before @)
+            String username = registerRequest.getEmail().split("@")[0];
+            
+            // Check if username exists, if so add numbers
+            int counter = 1;
+            String originalUsername = username;
+            while (taiKhoanRepository.findByTenDangNhap(username).isPresent()) {
+                username = originalUsername + counter;
+                counter++;
+            }
+
+            // Create TaiKhoan
+            TaiKhoan taiKhoan = new TaiKhoan();
+            taiKhoan.setMa(accountCode);
+            taiKhoan.setTenDangNhap(username);
+            taiKhoan.setMatKhau(registerRequest.getPassword());
+            taiKhoan.setEmail(registerRequest.getEmail());
+            taiKhoan.setSoDienThoai(registerRequest.getPhoneNumber());
+            taiKhoan.setIdQuyenHan(customerRole.get());
+            taiKhoan.setDeleted(false); // Not logged in initially
+            taiKhoan = taiKhoanRepository.save(taiKhoan);
+
+            // Generate customer code
+            String customerCode = "KH" + System.currentTimeMillis();
+
+            // Create KhachHang
+            KhachHang khachHang = new KhachHang();
+            khachHang.setMa(customerCode);
+            khachHang.setTen(registerRequest.getName());
+            khachHang.setGioiTinh((short) 1); // Default male
+            khachHang.setNgaySinh(Date.valueOf(LocalDate.now().minusYears(18))); // Default 18 years old
+            khachHang.setDeleted(true); // Active customer
+            khachHang.setTaiKhoan(taiKhoan);
+            khachHang.setCreatedAt(Instant.now());
+            khachHang = khachHangRepository.save(khachHang);
+
+            return RegisterResponse.success("Đăng ký thành công", khachHang.getId(), customerCode);
+
+        } catch (Exception e) {
+            return RegisterResponse.error("Lỗi hệ thống: " + e.getMessage());
         }
     }
 }

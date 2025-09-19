@@ -115,4 +115,8 @@ public interface KhachHangRepository extends JpaRepository<KhachHang, Integer> {
     // Find customer by TaiKhoan ID directly
     @Query("SELECT kh FROM KhachHang kh WHERE kh.taiKhoan.id = :taiKhoanId")
     Optional<KhachHang> findByTaiKhoanId(@Param("taiKhoanId") Integer taiKhoanId);
+    
+    // Find customer by phone number (from TaiKhoan)
+    @Query("SELECT kh FROM KhachHang kh WHERE kh.taiKhoan.soDienThoai = :soDienThoai")
+    Optional<KhachHang> findBySoDienThoai(@Param("soDienThoai") String soDienThoai);
 }

@@ -759,12 +759,30 @@ public class BanHangClientServiceImpl implements BanHangClientService{
         HoaDonDetailResponse response = new HoaDonDetailResponse();
         response.setId(hoaDon.getId());
         response.setMaHoaDon(hoaDon.getMa());
+        response.setLoaiDon(hoaDon.getLoaiDon());
         response.setTenKhachHang(hoaDon.getTenKhachHang());
         response.setSoDienThoaiKhachHang(hoaDon.getSoDienThoaiKhachHang());
+        response.setDiaChiKhachHang(hoaDon.getDiaChiKhachHang());
+        response.setEmail(hoaDon.getEmail());
+        response.setGhiChu(hoaDon.getGhiChu());
+        response.setTienSanPham(hoaDon.getTienSanPham());
         response.setTongTien(hoaDon.getTongTien());
         response.setTongTienSauGiam(hoaDon.getTongTienSauGiam());
+        response.setPhiVanChuyen(hoaDon.getPhiVanChuyen());
         response.setTrangThai(hoaDon.getTrangThai());
         response.setNgayTao(hoaDon.getNgayTao());
+        response.setNgayThanhToan(hoaDon.getNgayThanhToan());
+        
+        // Thông tin giảm giá
+        if (hoaDon.getIdPhieuGiamGia() != null) {
+            response.setMaGiamGia(hoaDon.getIdPhieuGiamGia().getMa());
+        }
+        
+        // Thông tin nhân viên
+        if (hoaDon.getIdNhanVien() != null) {
+            response.setMaNhanVien(hoaDon.getIdNhanVien().getMa());
+        }
+        
         return response;
     }
 
@@ -781,6 +799,93 @@ public class BanHangClientServiceImpl implements BanHangClientService{
             System.err.println("Error getting order details: " + e.getMessage());
             e.printStackTrace();
             throw new RuntimeException("Không thể lấy thông tin đơn hàng: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public HoaDonDetailResponse searchOrderByCode(String orderCode) {
+        try {
+            // Find the invoice by order code
+            HoaDon hoaDon = hoaDonRepository.findByMa(orderCode)
+                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng có mã: " + orderCode));
+
+            // Only return orders that are confirmed (status >= 1) for security
+            if (hoaDon.getTrangThai() < 1) {
+                throw new ResourceNotFoundException("Đơn hàng chưa được xác nhận");
+            }
+
+            // Get basic invoice info
+            HoaDonDetailResponse response = mapToHoaDonDetailResponse(hoaDon);
+            
+            // Get product details from HoaDonChiTiet with eager loading
+            List<com.example.sd_28_phostep_be.modal.bill.HoaDonChiTiet> hoaDonChiTiets = 
+                hoaDonChiTietRepository.findByHoaDonId(hoaDon.getId());
+            
+            System.out.println("Found " + hoaDonChiTiets.size() + " order items");
+            
+            if (!hoaDonChiTiets.isEmpty()) {
+                List<HoaDonDetailResponse.SanPhamChiTietInfo> sanPhamInfos = new java.util.ArrayList<>();
+                
+                for (com.example.sd_28_phostep_be.modal.bill.HoaDonChiTiet hdct : hoaDonChiTiets) {
+                    HoaDonDetailResponse.SanPhamChiTietInfo info = new HoaDonDetailResponse.SanPhamChiTietInfo();
+                    
+                    // Basic info
+                    info.setHoaDonChiTietId(hdct.getId());
+                    info.setIdHoaDon(hdct.getIdHoaDon().getId());
+                    info.setSoLuong(hdct.getSoLuong());
+                    info.setGiaBan(hdct.getGia());
+                    info.setGhiChu(hdct.getGhiChu());
+                    
+                    // Product details from ChiTietSanPham
+                    if (hdct.getIdChiTietSp() != null) {
+                        com.example.sd_28_phostep_be.modal.product.ChiTietSanPham ctsp = hdct.getIdChiTietSp();
+                        info.setChiTietSanPhamId(ctsp.getId());
+                        info.setMaChiTietSanPham(ctsp.getMa());
+                        
+                        // Product info
+                        if (ctsp.getIdSanPham() != null) {
+                            info.setIdSanPham(ctsp.getIdSanPham().getId());
+                            info.setMaSanPham(ctsp.getIdSanPham().getMa());
+                            info.setTenSanPham(ctsp.getIdSanPham().getTenSanPham());
+                            info.setMoTaChiTiet(ctsp.getIdSanPham().getMoTaSanPham());
+                            
+                            // Get image from AnhSanPham relationship
+                            if (ctsp.getIdSanPham().getIdAnhSanPham() != null) {
+                                String imageUrl = ctsp.getIdSanPham().getIdAnhSanPham().getUrlAnh();
+                                System.out.println("Product: " + ctsp.getIdSanPham().getTenSanPham() + " - Image URL: " + imageUrl);
+                                info.setDuongDan(imageUrl);
+                            } else {
+                                System.out.println("Product: " + ctsp.getIdSanPham().getTenSanPham() + " - No image found");
+                            }
+                        }
+                        
+                        // Color info
+                        if (ctsp.getIdMauSac() != null) {
+                            info.setMauSac(ctsp.getIdMauSac().getTenMauSac());
+                        }
+                        
+                        // Size info
+                        if (ctsp.getIdKichCo() != null) {
+                            info.setKichCo(ctsp.getIdKichCo().getTenKichCo());
+                        }
+                        
+                        // Material info from SanPham
+                        if (ctsp.getIdSanPham() != null && ctsp.getIdSanPham().getIdChatLieu() != null) {
+                            info.setChatLieu(ctsp.getIdSanPham().getIdChatLieu().getTenChatLieu());
+                        }
+                    }
+                    
+                    sanPhamInfos.add(info);
+                }
+                
+                response.setSanPhamChiTietInfos(sanPhamInfos);
+            }
+
+            return response;
+        } catch (Exception e) {
+            System.err.println("Error searching order by code: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Không thể tìm kiếm đơn hàng: " + e.getMessage());
         }
     }
 }

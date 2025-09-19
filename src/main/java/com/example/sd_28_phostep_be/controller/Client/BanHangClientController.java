@@ -203,4 +203,17 @@ public class BanHangClientController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    /**
+     * Search order by order code (for guest users)
+     */
+    @GetMapping("/tra-cuu-don-hang")
+    public ResponseEntity<?> searchOrderByCode(@RequestParam String ma) {
+        try {
+            HoaDonDetailResponse result = banHangClientService.searchOrderByCode(ma);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }
