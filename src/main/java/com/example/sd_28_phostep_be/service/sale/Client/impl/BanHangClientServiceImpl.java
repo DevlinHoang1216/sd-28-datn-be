@@ -20,6 +20,7 @@ import com.example.sd_28_phostep_be.modal.sell.GioHang;
 import com.example.sd_28_phostep_be.modal.sell.GioHangChiTiet;
 import com.example.sd_28_phostep_be.modal.sell.HinhThucThanhToan;
 import com.example.sd_28_phostep_be.modal.sell.PhuongThucThanhToan;
+import com.example.sd_28_phostep_be.modal.sale.PhieuGiamGia;
 import com.example.sd_28_phostep_be.repository.account.KhachHang.KhachHangRepository;
 import com.example.sd_28_phostep_be.repository.account.NhanVien.NhanVienRepository;
 import com.example.sd_28_phostep_be.repository.bill.HoaDonChiTietRepository;
@@ -30,6 +31,7 @@ import com.example.sd_28_phostep_be.repository.sell.GioHangChiTietRepository;
 import com.example.sd_28_phostep_be.repository.sell.GioHangRepository;
 import com.example.sd_28_phostep_be.repository.sell.HinhThucThanhToanRepository;
 import com.example.sd_28_phostep_be.repository.sell.PhuongThucThanhToanRepository;
+import com.example.sd_28_phostep_be.repository.sale.PhieuGiamGia.PhieuGiamGiaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -74,6 +76,9 @@ public class BanHangClientServiceImpl implements BanHangClientService{
     
     @Autowired
     private PhuongThucThanhToanRepository phuongThucThanhToanRepository;
+    
+    @Autowired
+    private PhieuGiamGiaRepository phieuGiamGiaRepository;
 
     private String generateRandomCode() {
         String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -379,7 +384,15 @@ public class BanHangClientServiceImpl implements BanHangClientService{
         
         // Set voucher if provided
         if (request.getVoucherId() != null) {
-            // TODO: Set voucher - hoaDon.setIdPhieuGiamGia(voucher);
+            System.out.println("Setting voucher ID: " + request.getVoucherId() + " for invoice: " + hoaDonId);
+            // Find voucher by ID and set it
+            PhieuGiamGia voucher = phieuGiamGiaRepository.findById(request.getVoucherId()).orElse(null);
+            if (voucher != null) {
+                hoaDon.setIdPhieuGiamGia(voucher);
+                System.out.println("Voucher set successfully: " + voucher.getMa());
+            } else {
+                System.err.println("Voucher not found with ID: " + request.getVoucherId());
+            }
         }
         
         // Calculate totals
@@ -581,6 +594,18 @@ public class BanHangClientServiceImpl implements BanHangClientService{
         if (request.getPhiVanChuyen() != null) {
             hoaDon.setPhiVanChuyen(request.getPhiVanChuyen());
             System.out.println("Updated shipping fee: " + request.getPhiVanChuyen());
+        }
+        
+        // Set voucher if provided
+        if (request.getVoucherId() != null) {
+            System.out.println("Setting voucher ID: " + request.getVoucherId() + " for invoice: " + hoaDonId);
+            PhieuGiamGia voucher = phieuGiamGiaRepository.findById(request.getVoucherId()).orElse(null);
+            if (voucher != null) {
+                hoaDon.setIdPhieuGiamGia(voucher);
+                System.out.println("Voucher set successfully: " + voucher.getMa());
+            } else {
+                System.err.println("Voucher not found with ID: " + request.getVoucherId());
+            }
         }
         
         // Calculate discount from voucher if provided
