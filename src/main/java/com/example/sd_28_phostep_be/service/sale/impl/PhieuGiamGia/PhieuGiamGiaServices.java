@@ -254,30 +254,21 @@ public class PhieuGiamGiaServices {
     // Lấy tất cả phiếu giảm giá còn hoạt động (công khai và cá nhân cho khách hàng)
     public List<PhieuGiamGia> getActiveVouchersForCustomer(Integer customerId) {
         List<PhieuGiamGia> activeVouchers = new ArrayList<>();
+        Instant now = Instant.now();
         
-        // 1. Lấy tất cả phiếu giảm giá công khai còn hoạt động
-        List<PhieuGiamGia> publicVouchers = phieuGiamGiaRepository.findAll().stream()
-                .filter(pgg -> pgg.getTrangThai() != null && pgg.getTrangThai()) // Trạng thái true
-                .filter(pgg -> pgg.getDeleted() == null || !pgg.getDeleted()) // Deleted false
-                .filter(pgg -> pgg.getRiengTu() == null || !pgg.getRiengTu()) // Phiếu công khai
-                .collect(Collectors.toList());
-        
+        // 1. Lấy phiếu giảm giá công khai còn hoạt động
+        List<PhieuGiamGia> publicVouchers = phieuGiamGiaRepository.findActivePublicVouchers(now);
         activeVouchers.addAll(publicVouchers);
         
         // 2. Nếu có customerId, lấy thêm phiếu giảm giá cá nhân
         if (customerId != null) {
-            KhachHang khachHang = khachHangRepository.findById(customerId).orElse(null);
-            if (khachHang != null) {
-                List<PhieuGiamGiaCaNhan> personalVouchers = phieuGiamGiaCaNhanRepository
-                        .findAllByIdKhachHang(khachHang);
-                
-                for (PhieuGiamGiaCaNhan pggCaNhan : personalVouchers) {
-                    PhieuGiamGia pgg = pggCaNhan.getIdPhieuGiamGia();
-                    if (pgg.getTrangThai() != null && pgg.getTrangThai() && // Trạng thái true
-                        (pgg.getDeleted() == null || !pgg.getDeleted()) && // Deleted false
-                        !activeVouchers.contains(pgg)) {
-                        activeVouchers.add(pgg);
-                    }
+            List<PhieuGiamGiaCaNhan> personalVouchers = phieuGiamGiaCaNhanRepository
+                    .findActivePersonalVouchers(customerId, now);
+            
+            for (PhieuGiamGiaCaNhan pggCaNhan : personalVouchers) {
+                PhieuGiamGia pgg = pggCaNhan.getIdPhieuGiamGia();
+                if (!activeVouchers.contains(pgg)) {
+                    activeVouchers.add(pgg);
                 }
             }
         }
@@ -287,27 +278,8 @@ public class PhieuGiamGiaServices {
 
     // Lấy phiếu giảm giá công khai còn hoạt động
     public List<PhieuGiamGia> getActivePublicVouchers() {
-        return phieuGiamGiaRepository.findAll().stream()
-                .filter(pgg -> pgg.getTrangThai() != null && pgg.getTrangThai()) // Trạng thái true
-                .filter(pgg -> pgg.getDeleted() == null || !pgg.getDeleted()) // Deleted false
-                .filter(pgg -> pgg.getRiengTu() == null || !pgg.getRiengTu()) // Chỉ lấy phiếu công khai (không riêng tư)
-                .filter(pgg -> {
-                    // Kiểm tra ngày hiệu lực
-                    LocalDate today = LocalDate.now();
-                    LocalDate startDate = pgg.getNgayBatDau() != null ? 
-                        pgg.getNgayBatDau().atZone(ZoneId.systemDefault()).toLocalDate() : null;
-                    LocalDate endDate = pgg.getNgayKetThuc() != null ? 
-                        pgg.getNgayKetThuc().atZone(ZoneId.systemDefault()).toLocalDate() : null;
-                    
-                    boolean isValidDate = (startDate == null || !today.isBefore(startDate)) && 
-                                         (endDate == null || !today.isAfter(endDate));
-                    
-                    // Kiểm tra số lượng sử dụng (chỉ kiểm tra soLuongDung > 0)
-                    boolean hasQuantity = pgg.getSoLuongDung() != null && pgg.getSoLuongDung() > 0;
-                    
-                    return isValidDate && hasQuantity;
-                })
-                .collect(Collectors.toList());
+        Instant now = Instant.now();
+        return phieuGiamGiaRepository.findActivePublicVouchers(now);
     }
 
     /**

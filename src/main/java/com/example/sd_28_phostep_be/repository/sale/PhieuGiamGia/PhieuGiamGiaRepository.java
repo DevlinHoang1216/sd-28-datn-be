@@ -40,4 +40,10 @@ public interface PhieuGiamGiaRepository extends JpaRepository<PhieuGiamGia, Inte
 
     // Kiểm tra mã phiếu giảm giá đã tồn tại chưa (khi tạo mới)
     boolean existsByMaAndDeletedFalse(String ma);
+
+    // Tìm phiếu giảm giá công khai đang hoạt động (cho client API)
+    @Query("SELECT p FROM PhieuGiamGia p WHERE p.trangThai = true AND p.deleted = false " +
+           "AND p.ngayBatDau <= :now AND p.ngayKetThuc >= :now " +
+           "AND (p.riengTu = false OR p.riengTu IS NULL)")
+    List<PhieuGiamGia> findActivePublicVouchers(@Param("now") Instant now);
 }

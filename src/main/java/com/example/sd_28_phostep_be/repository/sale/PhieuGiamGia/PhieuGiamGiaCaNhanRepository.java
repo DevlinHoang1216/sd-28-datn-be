@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,4 +28,13 @@ public interface PhieuGiamGiaCaNhanRepository extends JpaRepository<PhieuGiamGia
     @Modifying
     @Query("DELETE FROM PhieuGiamGiaCaNhan p WHERE p.idPhieuGiamGia.id = :pggId")
     void deleteAllByPhieuGiamGiaId(@Param("pggId") Integer pggId);
+
+    // Tìm phiếu giảm giá cá nhân đang hoạt động cho khách hàng
+    @Query("SELECT p FROM PhieuGiamGiaCaNhan p " +
+           "WHERE p.idKhachHang.id = :customerId " +
+           "AND p.idPhieuGiamGia.trangThai = true " +
+           "AND p.idPhieuGiamGia.deleted = false " +
+           "AND p.idPhieuGiamGia.ngayBatDau <= :now " +
+           "AND p.idPhieuGiamGia.ngayKetThuc >= :now")
+    List<PhieuGiamGiaCaNhan> findActivePersonalVouchers(@Param("customerId") Integer customerId, @Param("now") Instant now);
 }

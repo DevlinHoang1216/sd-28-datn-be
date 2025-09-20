@@ -57,6 +57,8 @@ public class VNPayClientController {
             System.out.println("=== CLIENT VNPAY CREATE PAYMENT ENDPOINT HIT ===");
             System.out.println("Creating VNPay payment for client - Invoice ID: " + hoaDonId);
             System.out.println("Payment request: " + paymentRequest);
+            System.out.println("Voucher ID from request: " + paymentRequest.getVoucherId());
+            System.out.println("Voucher ID type: " + (paymentRequest.getVoucherId() != null ? paymentRequest.getVoucherId().getClass().getSimpleName() : "null"));
             
             // Validate payment request
             if (hoaDonId == null) {
@@ -122,8 +124,30 @@ public class VNPayClientController {
             if (invoiceId != null && !invoiceId.isEmpty()) {
                 System.out.println("VNPay payment successful for client invoice: " + invoiceId);
                 
-                // Payment successful - redirect to purchase history page
-                return new RedirectView(clientFrontendUrl + "/account/purchase-history?payment=vnpay&status=success&invoiceId=" + invoiceId);
+                try {
+                    // Get order details to determine redirect path
+                    var orderDetails = banHangClientService.getOrderDetails(Integer.parseInt(invoiceId));
+                    String orderCode = orderDetails.getMaHoaDon();
+                    
+                    // Check if customer is authenticated (guest orders usually have minimal customer info)
+                    // For now, assume all VNPay orders are from guests since we need to redirect to order lookup
+                    // TODO: Implement proper authentication check when customer ID field is available
+                    boolean isAuthenticated = false; // Force guest flow for VNPay orders
+                    
+                    if (isAuthenticated) {
+                        // Authenticated users: Go to purchase history
+                        System.out.println("Authenticated user - redirecting to purchase history");
+                        return new RedirectView(clientFrontendUrl + "/account/purchase-history?payment=vnpay&status=success&invoiceId=" + invoiceId);
+                    } else {
+                        // Guest users: Go to order lookup with auto search
+                        System.out.println("Guest user - redirecting to order lookup with code: " + orderCode);
+                        return new RedirectView(clientFrontendUrl + "/orders?orderCode=" + orderCode + "&autoSearch=true&payment=vnpay&status=success");
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error getting order details for redirect: " + e.getMessage());
+                    // Fallback to order success page
+                    return new RedirectView(clientFrontendUrl + "/order-success?payment=vnpay&status=success&orderId=" + invoiceId);
+                }
             } else {
                 System.out.println("VNPay payment failed for client");
                 // Payment failed - redirect to client checkout with error
