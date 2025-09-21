@@ -91,7 +91,7 @@ public class KhachHangServiceImpl implements KhachHangService {
                 .soDienThoai(request.getSoDienThoai())
                 .matKhau(request.getMatKhau()) // Should be encoded in real application
                 .idQuyenHan(quyenHan)
-                .deleted(true)
+                .deleted(true) // Set deleted = 1 (true) for new customer account
                 .build();
         
         System.out.println("TaiKhoan before save - Email: " + taiKhoan.getEmail());
@@ -106,12 +106,14 @@ public class KhachHangServiceImpl implements KhachHangService {
                 .gioiTinh(request.getGioiTinh())
                 .ngaySinh(request.getNgaySinh())
                 .cccd(request.getCccd())
-                .deleted(true)
+                .deleted(true) // Set deleted = 1 (true) for new customer - same as account
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
                 .build();
         
+        System.out.println("KhachHang before save - deleted: " + khachHang.getDeleted());
         khachHang = khachHangRepository.save(khachHang);
+        System.out.println("KhachHang after save - deleted: " + khachHang.getDeleted());
         
         // Create default address if any address field is provided
         if (hasAddressInfo(request)) {
@@ -188,9 +190,7 @@ public class KhachHangServiceImpl implements KhachHangService {
         if (request.getCccd() != null) {
             khachHang.setCccd(request.getCccd());
         }
-        if (request.getDeleted() != null) {
-            khachHang.setDeleted(request.getDeleted());
-        }
+        // Removed deleted field update - deleted status should only be changed through specific delete/restore methods
         
         khachHang.setUpdatedAt(Instant.now());
         
