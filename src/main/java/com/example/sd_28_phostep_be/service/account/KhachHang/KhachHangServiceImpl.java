@@ -91,7 +91,7 @@ public class KhachHangServiceImpl implements KhachHangService {
                 .soDienThoai(request.getSoDienThoai())
                 .matKhau(request.getMatKhau()) // Should be encoded in real application
                 .idQuyenHan(quyenHan)
-                .deleted(false)
+                .deleted(true)
                 .build();
         
         System.out.println("TaiKhoan before save - Email: " + taiKhoan.getEmail());
