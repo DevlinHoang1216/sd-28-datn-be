@@ -106,7 +106,7 @@ public interface KhachHangRepository extends JpaRepository<KhachHang, Integer> {
     List<KhachHangDTOResponse> findAllActiveKhachHang();
 
     // Statistics query
-    @Query("SELECT COUNT(kh) FROM KhachHang kh WHERE kh.deleted = false OR kh.deleted IS NULL")
+    @Query("SELECT COUNT(kh) FROM KhachHang kh WHERE kh.deleted = true OR kh.deleted IS NULL")
     Long getTotalActiveCustomers();
 
     // Find customer by TaiKhoan for authentication
