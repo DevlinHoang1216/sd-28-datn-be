@@ -9,6 +9,7 @@ public class ChiTietSanPhamWithDiscountResponse {
     private Integer soLuongTonKho;
     
     // Product information
+    private Integer idSanPham; // Add product ID field
     private String tenSanPham;
     private String tenDanhMuc;
     private String tenThuongHieu;
@@ -32,7 +33,7 @@ public class ChiTietSanPhamWithDiscountResponse {
     public ChiTietSanPhamWithDiscountResponse() {}
     
     public ChiTietSanPhamWithDiscountResponse(Integer id, String ma, BigDecimal giaBan, Integer soLuongTonKho,
-                                            String tenSanPham, String tenDanhMuc, String tenThuongHieu,
+                                            Integer idSanPham, String tenSanPham, String tenDanhMuc, String tenThuongHieu,
                                             String tenChatLieu, String tenDeGiay, String tenMauSac, String hexMauSac,
                                             String tenKichCo, String urlAnhSanPham, BigDecimal giaGiamGia,
                                             String tenDotGiamGia, boolean hasDiscount) {
@@ -40,6 +41,7 @@ public class ChiTietSanPhamWithDiscountResponse {
         this.ma = ma;
         this.giaBan = giaBan;
         this.soLuongTonKho = soLuongTonKho;
+        this.idSanPham = idSanPham;
         this.tenSanPham = tenSanPham;
         this.tenDanhMuc = tenDanhMuc;
         this.tenThuongHieu = tenThuongHieu;
@@ -66,6 +68,9 @@ public class ChiTietSanPhamWithDiscountResponse {
     
     public Integer getSoLuongTonKho() { return soLuongTonKho; }
     public void setSoLuongTonKho(Integer soLuongTonKho) { this.soLuongTonKho = soLuongTonKho; }
+    
+    public Integer getIdSanPham() { return idSanPham; }
+    public void setIdSanPham(Integer idSanPham) { this.idSanPham = idSanPham; }
     
     public String getTenSanPham() { return tenSanPham; }
     public void setTenSanPham(String tenSanPham) { this.tenSanPham = tenSanPham; }
