@@ -221,6 +221,7 @@ public class ChiTietSanPhamService {
                 product.getMa(),
                 product.getGiaBan(),
                 product.getSoLuongTonKho(),
+                product.getIdSanPham() != null ? product.getIdSanPham().getId() : null, // Add product ID
                 product.getIdSanPham() != null ? product.getIdSanPham().getTenSanPham() : null,
                 product.getIdSanPham() != null && product.getIdSanPham().getIdDanhMuc() != null ? 
                     product.getIdSanPham().getIdDanhMuc().getTenDanhMuc() : null,

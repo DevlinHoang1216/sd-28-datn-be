@@ -19,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.ArrayList;
 
 @RestController
 @RequestMapping("/api/ban-hang-client")
@@ -58,7 +59,54 @@ public class BanHangClientController {
     }
 
     /**
-     * Load all active product details for sales counter with pagination
+     * Load active product details by product ID with discount information for client
+     */
+    @GetMapping("/chi-tiet-san-pham-with-discount/{productId}")
+    public ResponseEntity<?> getActiveProductDetailsWithDiscount(@PathVariable Integer productId) {
+        try {
+            List<ChiTietSanPham> activeDetails = chiTietSanPhamService.getActiveByProductIdForSales(productId);
+            List<com.example.sd_28_phostep_be.dto.product.response.ChiTietSanPhamWithDiscountResponse> result = new ArrayList<>();
+            
+            for (ChiTietSanPham product : activeDetails) {
+                com.example.sd_28_phostep_be.service.product.ChiTietSanPhamService.DiscountInfo discountInfo = 
+                    chiTietSanPhamService.getDiscountInfo(product);
+                
+                com.example.sd_28_phostep_be.dto.product.response.ChiTietSanPhamWithDiscountResponse response = 
+                    new com.example.sd_28_phostep_be.dto.product.response.ChiTietSanPhamWithDiscountResponse(
+                        product.getId(),
+                        product.getMa(),
+                        product.getGiaBan(),
+                        product.getSoLuongTonKho(),
+                        product.getIdSanPham() != null ? product.getIdSanPham().getId() : null, // Add product ID
+                        product.getIdSanPham() != null ? product.getIdSanPham().getTenSanPham() : null,
+                        product.getIdSanPham() != null && product.getIdSanPham().getIdDanhMuc() != null ? 
+                            product.getIdSanPham().getIdDanhMuc().getTenDanhMuc() : null,
+                        product.getIdSanPham() != null && product.getIdSanPham().getIdThuongHieu() != null ? 
+                            product.getIdSanPham().getIdThuongHieu().getTenThuongHieu() : null,
+                        product.getIdSanPham() != null && product.getIdSanPham().getIdChatLieu() != null ? 
+                            product.getIdSanPham().getIdChatLieu().getTenChatLieu() : null,
+                        product.getIdSanPham() != null && product.getIdSanPham().getIdDeGiay() != null ? 
+                            product.getIdSanPham().getIdDeGiay().getTenDeGiay() : null,
+                        product.getIdMauSac() != null ? product.getIdMauSac().getTenMauSac() : null,
+                        product.getIdMauSac() != null ? product.getIdMauSac().getHex() : null,
+                        product.getIdKichCo() != null ? product.getIdKichCo().getTenKichCo() : null,
+                        product.getIdAnhSanPham() != null ? product.getIdAnhSanPham().getUrlAnh() : null,
+                        discountInfo != null ? discountInfo.getDiscountedPrice() : null,
+                        discountInfo != null ? discountInfo.getCampaignName() : null,
+                        discountInfo != null
+                    );
+                
+                result.add(response);
+            }
+            
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Lỗi: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Load all active product details for sales counter with pagination and discount prices
      */
     @GetMapping("/chi-tiet-san-pham")
     public ResponseEntity<Page<ChiTietSanPham>> getAllActiveProductDetails(
@@ -76,6 +124,20 @@ public class BanHangClientController {
         }
 
         return ResponseEntity.ok(activeDetails);
+    }
+
+    /**
+     * Load all active product details with discount information for client
+     */
+    @GetMapping("/chi-tiet-san-pham-with-discount")
+    public ResponseEntity<?> getAllActiveProductDetailsWithDiscount() {
+        try {
+            List<com.example.sd_28_phostep_be.dto.product.response.ChiTietSanPhamWithDiscountResponse> activeDetails = 
+                chiTietSanPhamService.getActiveProductDetailsWithDiscountPrices();
+            return ResponseEntity.ok(activeDetails);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Lỗi: " + e.getMessage());
+        }
     }
 
     /**
